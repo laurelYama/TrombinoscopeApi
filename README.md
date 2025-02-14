@@ -9,6 +9,7 @@ Cette application est une API REST développée en **Spring Boot** permettant la
 - **Hibernate** (ORM)
 - **JWT** (Authentification sécurisée)
 - **Maven** (Gestion des dépendances)
+- **Swagger** (Documentation API)
 - **Postman** (Tests API)
 
 ## Fonctionnalités implémentées
@@ -30,7 +31,11 @@ Cette application est une API REST développée en **Spring Boot** permettant la
 - Suppression et mise à jour d’une photo
 - Optimisation de la gestion des fichiers (taille limitée, formats acceptés)
 
-### 4. Sécurité 🔒
+### 4. Documentation API 📜
+- Intégration de Swagger UI pour visualiser et tester les endpoints
+- Accès via : [http://localhost:8080/swagger-ui.html](http://localhost:8080/swagger-ui.html)
+
+### 5. Sécurité 🔒
 - **JWT Token** pour sécuriser les endpoints
 - **Accès restreint** :
   - `admin` : Accès total
@@ -85,9 +90,7 @@ Cette application est une API REST développée en **Spring Boot** permettant la
 3. **Tester avec Postman** en ajoutant le token JWT dans l’en-tête `Authorization`.
 
 ## Prochaines améliorations 🚀
-- Ajout de rôles plus précis (ex: gestionnaire, modérateur...)
 - Implémentation d’un système de récupération de mot de passe
-- Ajout d’un stockage Cloud pour les images
 
 ---
 📌 **Projet en cours d'amélioration !**
