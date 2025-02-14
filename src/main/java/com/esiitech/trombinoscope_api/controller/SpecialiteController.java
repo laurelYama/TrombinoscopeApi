@@ -1,59 +1,74 @@
 package com.esiitech.trombinoscope_api.controller;
 
 import com.esiitech.trombinoscope_api.Entity.Specialite;
-import com.esiitech.trombinoscope_api.repository.SpecialiteRepository;
-import org.springframework.beans.factory.annotation.Autowired;
+import com.esiitech.trombinoscope_api.service.SpecialiteService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
-import java.util.Optional;
 
 @RestController
 @RequestMapping("/api/specialites")
 @CrossOrigin("*") // Autorise l'accès depuis le frontend
+@Tag(name = "Spécialités", description = "Gestion des spécialités")
 public class SpecialiteController {
 
-    @Autowired
-    private SpecialiteRepository specialiteRepository;
+    private final SpecialiteService specialiteService;
 
-    // Récupérer toutes les spécialités
+    public SpecialiteController(SpecialiteService specialiteService) {
+        this.specialiteService = specialiteService;
+    }
+
+    @PreAuthorize("hasRole('ADMIN') or hasRole('NORMAL')")
     @GetMapping
+    @Operation(summary = "Récupérer toutes les spécialités", description = "Renvoie la liste de toutes les spécialités disponibles.")
     public List<Specialite> getAllSpecialites() {
-        return specialiteRepository.findAll();
+        return specialiteService.getAllSpecialites();
     }
 
-    // Récupérer une spécialité par son ID
+    @PreAuthorize("hasRole('ADMIN') or hasRole('NORMAL')")
     @GetMapping("/{id}")
+    @Operation(summary = "Récupérer une spécialité par ID", description = "Renvoie une spécialité spécifique en fonction de son identifiant.")
     public ResponseEntity<Specialite> getSpecialiteById(@PathVariable Long id) {
-        Optional<Specialite> specialite = specialiteRepository.findById(id);
-        return specialite.map(ResponseEntity::ok).orElseGet(() -> ResponseEntity.notFound().build());
+        try {
+            Specialite specialite = specialiteService.getSpecialiteById(id);
+            return ResponseEntity.ok(specialite);
+        } catch (RuntimeException e) {
+            return ResponseEntity.notFound().build();
+        }
     }
 
-    // Ajouter une nouvelle spécialité
+    @PreAuthorize("hasRole('ADMIN') or hasRole('NORMAL')")
     @PostMapping
-    public Specialite createSpecialite(@RequestBody Specialite specialite) {
-        return specialiteRepository.save(specialite);
+    @Operation(summary = "Ajouter une nouvelle spécialité", description = "Ajoute une nouvelle spécialité et la renvoie.")
+    public ResponseEntity<Specialite> createSpecialite(@Valid @RequestBody Specialite specialite) {
+        Specialite savedSpecialite = specialiteService.createSpecialite(specialite);
+        return ResponseEntity.ok(savedSpecialite);
     }
 
-    // Modifier une spécialité existante
+    @PreAuthorize("hasRole('ADMIN') or hasRole('NORMAL')")
     @PutMapping("/{id}")
+    @Operation(summary = "Modifier une spécialité", description = "Met à jour une spécialité existante avec les nouvelles informations fournies.")
     public ResponseEntity<Specialite> updateSpecialite(@PathVariable Long id, @RequestBody Specialite newSpecialite) {
-        return specialiteRepository.findById(id)
-                .map(specialite -> {
-                    specialite.setNom(newSpecialite.getNom());
-                    return ResponseEntity.ok(specialiteRepository.save(specialite));
-                })
-                .orElseGet(() -> ResponseEntity.notFound().build());
+        try {
+            return ResponseEntity.ok(specialiteService.updateSpecialite(id, newSpecialite));
+        } catch (RuntimeException e) {
+            return ResponseEntity.notFound().build();
+        }
     }
 
-    // Supprimer une spécialité
+    @PreAuthorize("hasRole('ADMIN') or hasRole('NORMAL')")
     @DeleteMapping("/{id}")
+    @Operation(summary = "Supprimer une spécialité", description = "Supprime une spécialité en fonction de son identifiant.")
     public ResponseEntity<Void> deleteSpecialite(@PathVariable Long id) {
-        if (specialiteRepository.existsById(id)) {
-            specialiteRepository.deleteById(id);
+        try {
+            specialiteService.deleteSpecialite(id);
             return ResponseEntity.noContent().build();
-        } else {
+        } catch (RuntimeException e) {
             return ResponseEntity.notFound().build();
         }
     }

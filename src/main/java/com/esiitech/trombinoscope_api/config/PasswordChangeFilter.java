@@ -25,6 +25,13 @@ public class PasswordChangeFilter extends GenericFilterBean {
             throws IOException, ServletException {
 
         HttpServletRequest httpRequest = (HttpServletRequest) request;
+
+        // Vérifier si l'utilisateur est authentifié
+        if (httpRequest.getUserPrincipal() == null) {
+            chain.doFilter(request, response);
+            return;
+        }
+
         String email = httpRequest.getUserPrincipal().getName();
 
         Optional<Utilisateur> utilisateur = utilisateurRepository.findByEmail(email);
@@ -36,5 +43,6 @@ public class PasswordChangeFilter extends GenericFilterBean {
 
         chain.doFilter(request, response);
     }
+
 }
 

@@ -1,62 +1,87 @@
 package com.esiitech.trombinoscope_api.controller;
 
 import com.esiitech.trombinoscope_api.Entity.Promotion;
-import com.esiitech.trombinoscope_api.repository.PromotionRepository;
-import org.springframework.beans.factory.annotation.Autowired;
+import com.esiitech.trombinoscope_api.service.PromotionService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
-import java.util.Optional;
-
 
 @RestController
 @RequestMapping("/api/promotions")
-@CrossOrigin("*") // Permet les requêtes depuis le frontend
+@CrossOrigin("*") // Autoriser les requêtes depuis le frontend
+@Tag(name = "Promotions", description = "API pour gérer les promotions")
 public class PromotionController {
 
-    @Autowired
-    private PromotionRepository promotionRepository;
+    private final PromotionService promotionService;
 
-    // Récupérer toutes les promotions
+    public PromotionController(PromotionService promotionService) {
+        this.promotionService = promotionService;
+    }
+
+    @Operation(summary = "Récupérer toutes les promotions",
+            description = "Permet d'obtenir la liste de toutes les promotions.")
+    @PreAuthorize("hasRole('ADMIN') or hasRole('NORMAL')")
     @GetMapping
     public List<Promotion> getAllPromotions() {
-        return promotionRepository.findAll();
+        return promotionService.getAllPromotions();
     }
 
-    // Récupérer une promotion par son ID
+    @Operation(summary = "Récupérer une promotion par ID",
+            description = "Permet d'obtenir une promotion spécifique en fournissant son ID.",
+            responses = {
+                    @ApiResponse(responseCode = "200", description = "Promotion trouvée",
+                            content = @Content(mediaType = "application/json",
+                                    schema = @Schema(implementation = Promotion.class))),
+                    @ApiResponse(responseCode = "404", description = "Promotion non trouvée")
+            })
+    @PreAuthorize("hasRole('ADMIN') or hasRole('NORMAL')")
     @GetMapping("/{id}")
     public ResponseEntity<Promotion> getPromotionById(@PathVariable Long id) {
-        Optional<Promotion> promotion = promotionRepository.findById(id);
-        return promotion.map(ResponseEntity::ok).orElseGet(() -> ResponseEntity.notFound().build());
-    }
-
-    // Ajouter une nouvelle promotion
-    @PostMapping
-    public Promotion createPromotion(@RequestBody Promotion promotion) {
-        return promotionRepository.save(promotion);
-    }
-
-    // Modifier une promotion existante
-    @PutMapping("/{id}")
-    public ResponseEntity<Promotion> updatePromotion(@PathVariable Long id, @RequestBody Promotion newPromotion) {
-        return promotionRepository.findById(id)
-                .map(promotion -> {
-                    promotion.setAnnee(newPromotion.getAnnee());
-                    return ResponseEntity.ok(promotionRepository.save(promotion));
-                })
-                .orElseGet(() -> ResponseEntity.notFound().build());
-    }
-
-    // Supprimer une promotion
-    @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deletePromotion(@PathVariable Long id) {
-        if (promotionRepository.existsById(id)) {
-            promotionRepository.deleteById(id);
-            return ResponseEntity.noContent().build();
-        } else {
+        try {
+            Promotion promotion = promotionService.getPromotionById(id);
+            return ResponseEntity.ok(promotion);
+        } catch (RuntimeException e) {
             return ResponseEntity.notFound().build();
         }
     }
-}
 
+    @Operation(summary = "Ajouter une nouvelle promotion",
+            description = "Permet de créer une nouvelle promotion.")
+    @PreAuthorize("hasRole('ADMIN') or hasRole('NORMAL')")
+    @PostMapping
+    public ResponseEntity<Promotion> createPromotion(@RequestBody Promotion promotion) {
+        if (promotionService.existsByAnnee(promotion.getAnnee())) {
+            return ResponseEntity.badRequest().build(); // Empêche les doublons
+        }
+        Promotion savedPromotion = promotionService.createPromotion(promotion);
+        return ResponseEntity.ok(savedPromotion);
+    }
+
+    @Operation(summary = "Modifier une promotion existante",
+            description = "Permet de mettre à jour une promotion existante avec un nouvel ID.")
+    @PreAuthorize("hasRole('ADMIN') or hasRole('NORMAL')")
+    @PutMapping("/{id}")
+    public ResponseEntity<Promotion> updatePromotion(@PathVariable Long id, @RequestBody Promotion newPromotion) {
+        try {
+            return ResponseEntity.ok(promotionService.updatePromotion(id, newPromotion));
+        } catch (RuntimeException e) {
+            return ResponseEntity.notFound().build();
+        }
+    }
+
+    @Operation(summary = "Supprimer une promotion",
+            description = "Permet de supprimer une promotion en fournissant son ID.")
+    @PreAuthorize("hasRole('ADMIN') or hasRole('NORMAL')")
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> deletePromotion(@PathVariable Long id) {
+        promotionService.deletePromotion(id);
+        return ResponseEntity.noContent().build();
+    }
+}

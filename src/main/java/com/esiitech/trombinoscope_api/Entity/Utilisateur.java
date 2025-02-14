@@ -3,12 +3,19 @@ package com.esiitech.trombinoscope_api.Entity;
 import com.esiitech.trombinoscope_api.Enum.Role;
 import jakarta.persistence.*;
 import lombok.*;
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.userdetails.UserDetails;
+
+import java.time.LocalDateTime;
+import java.util.Collection;
+import java.util.Collections;
 
 @Entity
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-public class Utilisateur {
+@Builder
+public class Utilisateur implements UserDetails {  // <--- Implémente UserDetails
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -27,9 +34,52 @@ public class Utilisateur {
     @Column(nullable = false)
     private Role role;
 
-    @Column(nullable = false, columnDefinition = "BOOLEAN DEFAULT TRUE")
-    private boolean forcePasswordChange;
+    @Column(nullable = false)
+    private boolean forcePasswordChange = true;
 
     @Column(nullable = false, updatable = false)
-    private String createdAt = java.time.LocalDateTime.now().toString();
+    private LocalDateTime createdAt;
+
+    @Column(nullable = false)
+    private LocalDateTime updatedAt;
+
+    @PrePersist
+    protected void onCreate() {
+        this.createdAt = LocalDateTime.now();
+        this.updatedAt = LocalDateTime.now();
+    }
+
+    @PreUpdate
+    protected void onUpdate() {
+        this.updatedAt = LocalDateTime.now();
+    }
+
+    // ========== Implémentation des méthodes de UserDetails ==========
+
+    @Override
+    public Collection<? extends GrantedAuthority> getAuthorities() {
+        return Collections.emptyList();  // Tu peux ajouter des rôles ici si nécessaire
+    }
+
+    @Override
+    public boolean isAccountNonExpired() {
+        return true;  // Modifier selon ta logique métier
+    }
+
+    @Override
+    public boolean isAccountNonLocked() {
+        return true;  // Modifier selon ta logique métier
+    }
+
+    @Override
+    public boolean isCredentialsNonExpired() {
+        return true;  // Modifier selon ta logique métier
+    }
+
+    @Override
+    public boolean isEnabled() {
+        return true;  // Modifier selon ta logique métier
+    }
+
+
 }

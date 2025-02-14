@@ -19,6 +19,7 @@ public class Etudiant {
     private String telephone;
     private String nationalite;
     private String photo;
+    private String photoPath;
 
     @ManyToOne
     @JoinColumn(name = "idPromotion")

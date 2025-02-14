@@ -2,11 +2,11 @@ package com.esiitech.trombinoscope_api.service;
 
 import com.esiitech.trombinoscope_api.Entity.Parcours;
 import com.esiitech.trombinoscope_api.repository.ParcoursRepository;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.util.List;
-import java.util.Optional;
-
 
 @Service
 public class ParcoursService {
@@ -21,23 +21,26 @@ public class ParcoursService {
         return parcoursRepository.findAll();
     }
 
-    public Optional<Parcours> getParcoursById(Long id) {
-        return parcoursRepository.findById(id);
+    public Parcours getParcoursById(Long id) {
+        return parcoursRepository.findById(id)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Parcours non trouvé"));
     }
 
     public Parcours createParcours(Parcours parcours) {
         return parcoursRepository.save(parcours);
     }
 
-    public Parcours updateParcours(Long id, Parcours parcoursDetails) {
+    public Parcours updateParcours(Long id, Parcours newParcours) {
         return parcoursRepository.findById(id).map(parcours -> {
-            parcours.setNiveau(parcoursDetails.getNiveau());
+            parcours.setNiveau(newParcours.getNiveau());
             return parcoursRepository.save(parcours);
-        }).orElseThrow(() -> new RuntimeException("Parcours non trouvé"));
+        }).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Parcours non trouvé"));
     }
 
     public void deleteParcours(Long id) {
+        if (!parcoursRepository.existsById(id)) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Parcours non trouvé");
+        }
         parcoursRepository.deleteById(id);
     }
 }
-

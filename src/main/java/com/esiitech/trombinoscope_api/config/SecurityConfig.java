@@ -1,12 +1,13 @@
 package com.esiitech.trombinoscope_api.config;
 
 import com.esiitech.trombinoscope_api.repository.UtilisateurRepository;
+import com.esiitech.trombinoscope_api.service.CustomUserDetailsService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.AuthenticationManager;
-import org.springframework.security.authentication.ProviderManager;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
+import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.core.userdetails.UserDetailsService;
@@ -14,39 +15,74 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.web.cors.CorsConfiguration;
+import org.springframework.web.cors.CorsConfigurationSource;
+import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
+
+import java.util.List;
 
 @Configuration
 @RequiredArgsConstructor
 public class SecurityConfig {
 
-    private final UtilisateurRepository utilisateurRepository;
-    private final UserDetailsService userDetailsService;
-    private final BCryptPasswordEncoder passwordEncoder;
+    private final JwtAuthenticationFilter jwtAuthenticationFilter;
+    private final UtilisateurRepository utilisateurRepository; // ✅ Injection du repository
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
-                .csrf(csrf -> csrf.disable()) // Désactiver CSRF pour API REST
-                .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS)) // API stateless
+                .cors(cors -> cors.configurationSource(corsConfigurationSource())) // Activation des CORS
+                .csrf(csrf -> csrf.disable())
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/api/utilisateurs").hasRole("ADMIN") // Seul l'admin peut voir les utilisateurs
-                        .anyRequest().authenticated() // Tous les autres endpoints nécessitent une authentification
+                        .requestMatchers("/api/auth/login").permitAll() // Connexion accessible à tous
+                        .requestMatchers("/api/auth/register").hasRole("ADMIN") // Seul un ADMIN peut inscrire un utilisateur
+                        .requestMatchers("/api/utilisateurs/**").hasRole("ADMIN") // Protection des routes utilisateurs
+                        .requestMatchers("/api/promotions/**").hasAnyRole("ADMIN", "NORMAL")
+                        .requestMatchers("/api/specialites/**").hasAnyRole("ADMIN", "NORMAL")
+                        .requestMatchers("/api/parcours/**").hasAnyRole("ADMIN", "NORMAL")
+                        .requestMatchers("/api/etudiants/**").hasAnyRole("ADMIN", "NORMAL")
+                        .requestMatchers("/api/photos/**").hasAnyRole("ADMIN", "NORMAL")
+                        .requestMatchers(
+                                "/swagger-ui/**",
+                                "/v3/api-docs/**"
+                        ).permitAll() // Autoriser l'accès à Swagger
+                        .anyRequest().authenticated()
                 )
-                .addFilterBefore(new PasswordChangeFilter(utilisateurRepository), UsernamePasswordAuthenticationFilter.class);
+                .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+                .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
+                .addFilterBefore(new PasswordChangeFilter(utilisateurRepository), UsernamePasswordAuthenticationFilter.class); // ✅ Suppression du ; avant cette ligne
 
         return http.build();
     }
 
     @Bean
-    public AuthenticationManager authenticationManager() {
+    public AuthenticationManager authenticationManager(AuthenticationConfiguration authConfig) throws Exception {
+        return authConfig.getAuthenticationManager();
+    }
+
+    @Bean
+    public DaoAuthenticationProvider authenticationProvider(CustomUserDetailsService userDetailsService, PasswordEncoder passwordEncoder) {
         DaoAuthenticationProvider authProvider = new DaoAuthenticationProvider();
         authProvider.setUserDetailsService(userDetailsService);
         authProvider.setPasswordEncoder(passwordEncoder);
-        return new ProviderManager(authProvider);
+        return authProvider;
     }
+
 
     @Bean
     public PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();
     }
+
+    @Bean
+    public CorsConfigurationSource corsConfigurationSource() {
+        CorsConfiguration configuration = new CorsConfiguration();
+        configuration.setAllowedOrigins(List.of("http://localhost:4200")); // Frontend Angular ou autre
+        configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
+        configuration.setAllowedHeaders(List.of("Authorization", "Content-Type"));
+        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
+        source.registerCorsConfiguration("/**", configuration);
+        return source;
+    }
+
 }
