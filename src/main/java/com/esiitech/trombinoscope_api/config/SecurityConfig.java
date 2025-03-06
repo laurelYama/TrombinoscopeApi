@@ -10,7 +10,6 @@ import org.springframework.security.authentication.dao.DaoAuthenticationProvider
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
-import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
@@ -35,6 +34,8 @@ public class SecurityConfig {
                 .csrf(csrf -> csrf.disable())
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/api/auth/login").permitAll() // Connexion accessible à tous
+                        .requestMatchers("/api/auth/change-password").permitAll()
+                        .requestMatchers("/api/utilisateurs/mot-de-passe-oublie", "/api/utilisateurs/reinitialiser-mot-de-passe").permitAll() // Permet l'accès sans authentification
                         .requestMatchers("/api/auth/register").hasRole("ADMIN") // Seul un ADMIN peut inscrire un utilisateur
                         .requestMatchers("/api/utilisateurs/**").hasRole("ADMIN") // Protection des routes utilisateurs
                         .requestMatchers("/api/promotions/**").hasAnyRole("ADMIN", "NORMAL")
@@ -68,7 +69,6 @@ public class SecurityConfig {
         return authProvider;
     }
 
-
     @Bean
     public PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();
@@ -77,7 +77,7 @@ public class SecurityConfig {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
-        configuration.setAllowedOrigins(List.of("http://localhost:4200")); // Frontend Angular ou autre
+        configuration.setAllowedOrigins(List.of("http://localhost:4200"));
         configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
         configuration.setAllowedHeaders(List.of("Authorization", "Content-Type"));
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();

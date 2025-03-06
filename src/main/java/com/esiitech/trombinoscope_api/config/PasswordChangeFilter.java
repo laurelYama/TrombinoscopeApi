@@ -4,45 +4,51 @@ import com.esiitech.trombinoscope_api.Entity.Utilisateur;
 import com.esiitech.trombinoscope_api.repository.UtilisateurRepository;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
-import jakarta.servlet.ServletRequest;
-import jakarta.servlet.ServletResponse;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-import org.springframework.web.filter.GenericFilterBean;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.web.filter.OncePerRequestFilter;
+
 import java.io.IOException;
 import java.util.Optional;
 
-public class PasswordChangeFilter extends GenericFilterBean {
+public class PasswordChangeFilter extends OncePerRequestFilter {
 
+    private static final Logger logger = LoggerFactory.getLogger(PasswordChangeFilter.class);
     private final UtilisateurRepository utilisateurRepository;
 
+    // Constructeur avec injection du repository
     public PasswordChangeFilter(UtilisateurRepository utilisateurRepository) {
         this.utilisateurRepository = utilisateurRepository;
     }
 
     @Override
-    public void doFilter(ServletRequest request, ServletResponse response, FilterChain chain)
-            throws IOException, ServletException {
+    protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
+            throws ServletException, IOException {
 
-        HttpServletRequest httpRequest = (HttpServletRequest) request;
+        // Vérification si l'utilisateur est authentifié
+        String email = request.getUserPrincipal() != null ? request.getUserPrincipal().getName() : null;
 
-        // Vérifier si l'utilisateur est authentifié
-        if (httpRequest.getUserPrincipal() == null) {
-            chain.doFilter(request, response);
-            return;
+        if (email == null) {
+            filterChain.doFilter(request, response);
+            return; // Si l'utilisateur n'est pas authentifié, on passe au filtre suivant
         }
 
-        String email = httpRequest.getUserPrincipal().getName();
+        Optional<Utilisateur> utilisateurOptional = utilisateurRepository.findByEmail(email);
 
-        Optional<Utilisateur> utilisateur = utilisateurRepository.findByEmail(email);
+        // Si l'utilisateur existe et qu'il doit changer son mot de passe
+        if (utilisateurOptional.isPresent()) {
+            Utilisateur utilisateur = utilisateurOptional.get();
 
-        if (utilisateur.isPresent() && utilisateur.get().isForcePasswordChange()) {
-            ((HttpServletResponse) response).sendError(HttpServletResponse.SC_FORBIDDEN, "Vous devez changer votre mot de passe.");
-            return;
+            if (utilisateur.isForcePasswordChange()) {
+                // Si l'utilisateur doit changer son mot de passe, envoyer une erreur
+                logger.warn("L'utilisateur {} doit changer son mot de passe.", email);
+                response.sendError(HttpServletResponse.SC_FORBIDDEN, "Vous devez changer votre mot de passe.");
+                return; // Bloquer l'accès tant que le mot de passe n'est pas changé
+            }
         }
 
-        chain.doFilter(request, response);
+        filterChain.doFilter(request, response); // Passer à la suite du filtrage
     }
-
 }
-

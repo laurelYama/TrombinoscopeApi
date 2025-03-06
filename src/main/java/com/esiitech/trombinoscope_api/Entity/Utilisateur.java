@@ -4,6 +4,7 @@ import com.esiitech.trombinoscope_api.Enum.Role;
 import jakarta.persistence.*;
 import lombok.*;
 import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 
 import java.time.LocalDateTime;
@@ -15,7 +16,8 @@ import java.util.Collections;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class Utilisateur implements UserDetails {  // <--- Implémente UserDetails
+@Table(name="users")
+public class Utilisateur implements UserDetails {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -43,6 +45,12 @@ public class Utilisateur implements UserDetails {  // <--- Implémente UserDetai
     @Column(nullable = false)
     private LocalDateTime updatedAt;
 
+    @Column(name = "reset_token")
+    private String resetToken;
+
+    @Column(name = "reset_token_timestamp")
+    private LocalDateTime resetTokenTimestamp; // Ajout du timestamp du token
+
     @PrePersist
     protected void onCreate() {
         this.createdAt = LocalDateTime.now();
@@ -58,28 +66,27 @@ public class Utilisateur implements UserDetails {  // <--- Implémente UserDetai
 
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
-        return Collections.emptyList();  // Tu peux ajouter des rôles ici si nécessaire
+        return Collections.singletonList(new SimpleGrantedAuthority("ROLE_" + this.role.name()));
     }
 
     @Override
     public boolean isAccountNonExpired() {
-        return true;  // Modifier selon ta logique métier
+        return true;
     }
 
     @Override
     public boolean isAccountNonLocked() {
-        return true;  // Modifier selon ta logique métier
+        return true;
     }
 
     @Override
     public boolean isCredentialsNonExpired() {
-        return true;  // Modifier selon ta logique métier
+        // Le mot de passe est expiré si forcePasswordChange est true
+        return !forcePasswordChange;
     }
 
     @Override
     public boolean isEnabled() {
-        return true;  // Modifier selon ta logique métier
+        return true;
     }
-
-
 }

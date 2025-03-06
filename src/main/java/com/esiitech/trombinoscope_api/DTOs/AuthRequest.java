@@ -13,8 +13,12 @@ public class AuthRequest {
     private String email;
 
     @NotBlank
+    private String username;
+
+    @NotBlank
     @Size(min = 6, message = "Le mot de passe doit contenir au moins 6 caractères")
     private String password;
-    private Role role;
 
+    private Role role;
 }
+
