@@ -1,7 +1,3 @@
-Voici un modèle (canevas) que vous pouvez facilement copier et utiliser pour votre projet :
-
----
-
 # Trombinoscope API
 
 ### Description
