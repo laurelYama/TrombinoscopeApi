@@ -1,112 +1,129 @@
-Trombinoscope API
-Description
-Cette application est une API REST développée en Spring Boot permettant la gestion d'un trombinoscope. Elle gère les étudiants, leurs photos et les utilisateurs avec des rôles définis. Les utilisateurs peuvent être administrateurs ou normaux, avec des accès distincts à différentes fonctionnalités.
+Voici un modèle (canevas) que vous pouvez facilement copier et utiliser pour votre projet :
 
-Technologies utilisées
-Spring Boot (Spring Security, Spring Data JPA, Spring Web)
+---
 
-MySQL (Base de données)
+# Trombinoscope API
 
-Hibernate (ORM)
+### Description
+Cette application est une API REST développée en **Spring Boot** permettant la gestion d'un trombinoscope. Elle gère les étudiants, leurs photos et les utilisateurs avec des rôles définis. Les utilisateurs peuvent être administrateurs ou normaux, avec des accès distincts à différentes fonctionnalités.
 
-JWT (Authentification sécurisée)
+### Technologies utilisées
+- **Spring Boot** (Spring Security, Spring Data JPA, Spring Web)
+- **MySQL** (Base de données)
+- **Hibernate** (ORM)
+- **JWT** (Authentification sécurisée)
+- **Maven** (Gestion des dépendances)
+- **Swagger** (Documentation API)
+- **Postman** (Tests API)
+- **JavaMailSender** (Envoi d'emails pour la récupération de mot de passe)
 
-Maven (Gestion des dépendances)
+---
 
-Swagger (Documentation API)
+### Fonctionnalités implémentées
 
-Postman (Tests API)
+#### 1. **Gestion des utilisateurs** 👥
+- **Deux types d’utilisateurs** : admin et normal.
+- **Authentification sécurisée** avec **Spring Security** et **JWT**.
+- **CRUD Utilisateurs** : Seul l'admin peut voir et modifier la liste des utilisateurs.
+- **Modification de son propre profil** : email, username, mot de passe.
+- **Forcer un utilisateur à changer son mot de passe à la première connexion.**
+- **Système de récupération de mot de passe** via email.
 
-JavaMailSender (Envoi d'emails pour la récupération de mot de passe)
+#### 2. **Gestion des étudiants** 🎓
+- Ajout, modification, suppression et récupération des étudiants.
+- **Filtrage des étudiants** par promotion, parcours, spécialité.
 
-Fonctionnalités implémentées
-1. Gestion des utilisateurs 👥
-Deux types d’utilisateurs : admin et normal.
+#### 3. **Gestion des photos** 🖼️
+- **Upload d’une photo de profil** pour chaque étudiant.
+- **Suppression et mise à jour d’une photo.**
+- **Optimisation de la gestion des fichiers** (taille limitée, formats acceptés).
 
-Authentification sécurisée avec Spring Security et JWT.
+#### 4. **Documentation API** 📜
+- **Intégration de Swagger UI** pour visualiser et tester les endpoints.
+- Accès via : [http://localhost:8080/swagger-ui.html](http://localhost:8080/swagger-ui.html).
 
-CRUD Utilisateurs : Seul l'admin peut voir et modifier la liste des utilisateurs.
+#### 5. **Sécurité** 🔒
+- **JWT Token** pour sécuriser les endpoints.
+- **Accès restreint** :
+  - **admin** : Accès total à toutes les fonctionnalités.
+  - **normal** : Accès aux étudiants et aux photos, mais pas aux utilisateurs.
 
-Modification de son propre profil : email, username, mot de passe.
+---
 
-Forcer un utilisateur à changer son mot de passe à la première connexion.
+### Endpoints disponibles
 
-Système de récupération de mot de passe via email.
+#### 🔑 **Authentification**
+| Méthode | Endpoint                          | Description                                        |
+|---------|-----------------------------------|----------------------------------------------------|
+| POST    | /api/auth/login                   | Connexion et obtention du token JWT                |
+| POST    | /api/auth/register                | Inscription d'un utilisateur (admin uniquement)   |
+| POST    | /api/auth/forgot-password         | Demande de récupération de mot de passe            |
+| POST    | /api/auth/reset-password          | Réinitialisation du mot de passe avec un token     |
 
-2. Gestion des étudiants 🎓
-Ajout, modification, suppression et récupération des étudiants.
+#### 👥 **Utilisateurs**
+| Méthode | Endpoint                          | Description                                        |
+|---------|-----------------------------------|----------------------------------------------------|
+| GET     | /api/utilisateurs                 | Liste des utilisateurs (admin uniquement)         |
+| GET     | /api/utilisateurs/{id}            | Récupérer un utilisateur (admin uniquement)       |
+| PUT     | /api/utilisateurs/{id}            | Modifier son profil                               |
+| DELETE  | /api/utilisateurs/{id}            | Supprimer un utilisateur (admin uniquement)       |
 
-Filtrage des étudiants par promotion, parcours, spécialité.
+#### 🎓 **Étudiants**
+| Méthode | Endpoint                          | Description                                        |
+|---------|-----------------------------------|----------------------------------------------------|
+| GET     | /api/etudiants                    | Liste des étudiants                                |
+| GET     | /api/etudiants/{id}               | Récupérer un étudiant                              |
+| POST    | /api/etudiants                    | Ajouter un étudiant                                |
+| PUT     | /api/etudiants/{id}               | Modifier un étudiant                               |
+| DELETE  | /api/etudiants/{id}               | Supprimer un étudiant                              |
 
-3. Gestion des photos 🖼️
-Upload d’une photo de profil pour chaque étudiant.
+#### 📸 **Photos**
+| Méthode | Endpoint                          | Description                                        |
+|---------|-----------------------------------|----------------------------------------------------|
+| POST    | /api/photos/upload                | Upload d'une photo                                 |
+| GET     | /api/photos/{filename}            | Récupérer une photo                               |
+| DELETE  | /api/photos/{filename}            | Supprimer une photo                               |
 
-Suppression et mise à jour d’une photo.
+---
 
-Optimisation de la gestion des fichiers (taille limitée, formats acceptés).
+### Configuration 🔧
 
-4. Documentation API 📜
-Intégration de Swagger UI pour visualiser et tester les endpoints.
+#### Configurer MySQL dans `application.properties` :
 
-Accès via : http://localhost:8080/swagger-ui.html.
-
-5. Sécurité 🔒
-JWT Token pour sécuriser les endpoints.
-
-Accès restreint :
-
-admin : Accès total à toutes les fonctionnalités.
-
-normal : Accès aux étudiants et aux photos, mais pas aux utilisateurs.
-
-Endpoints disponibles
-🔑 Authentification
-Méthode	Endpoint	Description
-POST	/api/auth/login	Connexion et obtention du token JWT
-POST	/api/auth/register	Inscription d'un utilisateur (admin uniquement)
-POST	/api/auth/forgot-password	Demande de récupération de mot de passe
-POST	/api/auth/reset-password	Réinitialisation du mot de passe avec un token
-👥 Utilisateurs
-Méthode	Endpoint	Description
-GET	/api/utilisateurs	Liste des utilisateurs (admin uniquement)
-GET	/api/utilisateurs/{id}	Récupérer un utilisateur (admin uniquement)
-PUT	/api/utilisateurs/{id}	Modifier son profil
-DELETE	/api/utilisateurs/{id}	Supprimer un utilisateur (admin uniquement)
-🎓 Étudiants
-Méthode	Endpoint	Description
-GET	/api/etudiants	Liste des étudiants
-GET	/api/etudiants/{id}	Récupérer un étudiant
-POST	/api/etudiants	Ajouter un étudiant
-PUT	/api/etudiants/{id}	Modifier un étudiant
-DELETE	/api/etudiants/{id}	Supprimer un étudiant
-📸 Photos
-Méthode	Endpoint	Description
-POST	/api/photos/upload	Upload d'une photo
-GET	/api/photos/{filename}	Récupérer une photo
-DELETE	/api/photos/{filename}	Supprimer une photo
-Configuration 🔧
-Configurer MySQL dans application.properties :
-properties
-Copier
-Modifier
+```properties
 spring.datasource.url=jdbc:mysql://localhost:3306/trombinoscope
 spring.datasource.username=root
 spring.datasource.password=
 spring.jpa.hibernate.ddl-auto=update
-Configurer l'envoi d'emails dans application.properties :
-properties
-Copier
-Modifier
+```
+
+#### Configurer l'envoi d'emails dans `application.properties` :
+
+```properties
 spring.mail.host=smtp.example.com
 spring.mail.port=587
 spring.mail.username=your_email@example.com
 spring.mail.password=your_password
 spring.mail.properties.mail.smtp.auth=true
 spring.mail.properties.mail.smtp.starttls.enable=true
-Lancer l’application avec Maven :
-bash
-Copier
-Modifier
+```
+
+---
+
+### Lancer l’application avec Maven :
+
+```bash
 mvn spring-boot:run
-Tester avec Postman
-Ajoutez le token JWT dans l’en-tête Authorization pour accéder aux points de terminaison protégés.
+```
+
+---
+
+### Tester avec Postman
+
+Ajoutez le **token JWT** dans l’en-tête `Authorization` pour accéder aux points de terminaison protégés.
+
+---
+
+**Trombinoscope API** © 2024
+
+---
