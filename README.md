@@ -13,7 +13,7 @@ Cette application est une API REST développée en **Spring Boot** permettant la
 - **Postman** (Tests API)
 - **JavaMailSender** (Envoi d'emails pour la récupération de mot de passe)
 
----
+
 
 ### Fonctionnalités implémentées
 
@@ -44,7 +44,7 @@ Cette application est une API REST développée en **Spring Boot** permettant la
   - **admin** : Accès total à toutes les fonctionnalités.
   - **normal** : Accès aux étudiants et aux photos, mais pas aux utilisateurs.
 
----
+
 
 ### Endpoints disponibles
 
@@ -80,7 +80,7 @@ Cette application est une API REST développée en **Spring Boot** permettant la
 | GET     | /api/photos/{filename}            | Récupérer une photo                               |
 | DELETE  | /api/photos/{filename}            | Supprimer une photo                               |
 
----
+
 
 ### Configuration 🔧
 
@@ -104,7 +104,7 @@ spring.mail.properties.mail.smtp.auth=true
 spring.mail.properties.mail.smtp.starttls.enable=true
 ```
 
----
+
 
 ### Lancer l’application avec Maven :
 
@@ -112,14 +112,11 @@ spring.mail.properties.mail.smtp.starttls.enable=true
 mvn spring-boot:run
 ```
 
----
 
 ### Tester avec Postman
 
 Ajoutez le **token JWT** dans l’en-tête `Authorization` pour accéder aux points de terminaison protégés.
 
----
+
 
 **Trombinoscope API** © 2024
-
----
