@@ -25,7 +25,7 @@ import java.util.List;
 public class SecurityConfig {
 
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
-    private final UtilisateurRepository utilisateurRepository; // ✅ Injection du repository
+    private final UtilisateurRepository utilisateurRepository; //Injection du repository
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
@@ -38,9 +38,10 @@ public class SecurityConfig {
                         .requestMatchers("/api/utilisateurs/mot-de-passe-oublie", "/api/utilisateurs/reinitialiser-mot-de-passe").permitAll() // Permet l'accès sans authentification
                         .requestMatchers("/api/auth/register").hasRole("ADMIN") // Seul un ADMIN peut inscrire un utilisateur
                         .requestMatchers("/api/utilisateurs/**").hasRole("ADMIN") // Protection des routes utilisateurs
-                        .requestMatchers("/api/promotions/**").hasAnyRole("ADMIN", "NORMAL")
-                        .requestMatchers("/api/specialites/**").hasAnyRole("ADMIN", "NORMAL")
-                        .requestMatchers("/api/parcours/**").hasAnyRole("ADMIN", "NORMAL")
+                        .requestMatchers("/api/promotions/**").hasRole("ADMIN")
+                        .requestMatchers("/api/specialites/**").hasRole("ADMIN")
+                        .requestMatchers("/api/parcours/**").hasRole("ADMIN")
+                        .requestMatchers("/api/diplomes/**").hasRole("ADMIN")
                         .requestMatchers("/api/etudiants/**").hasAnyRole("ADMIN", "NORMAL")
                         .requestMatchers("/api/photos/**").hasAnyRole("ADMIN", "NORMAL")
                         .requestMatchers(

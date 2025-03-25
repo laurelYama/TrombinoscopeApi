@@ -23,14 +23,14 @@ public class SpecialiteController {
         this.specialiteService = specialiteService;
     }
 
-    @PreAuthorize("hasRole('ADMIN') or hasRole('NORMAL')")
+    @PreAuthorize("hasRole('ADMIN')")
     @GetMapping
     @Operation(summary = "Récupérer toutes les spécialités", description = "Renvoie la liste de toutes les spécialités disponibles.")
     public List<Specialite> getAllSpecialites() {
         return specialiteService.getAllSpecialites();
     }
 
-    @PreAuthorize("hasRole('ADMIN') or hasRole('NORMAL')")
+    @PreAuthorize("hasRole('ADMIN')")
     @GetMapping("/{id}")
     @Operation(summary = "Récupérer une spécialité par ID", description = "Renvoie une spécialité spécifique en fonction de son identifiant.")
     public ResponseEntity<Specialite> getSpecialiteById(@PathVariable Long id) {
@@ -42,7 +42,7 @@ public class SpecialiteController {
         }
     }
 
-    @PreAuthorize("hasRole('ADMIN') or hasRole('NORMAL')")
+    @PreAuthorize("hasRole('ADMIN')")
     @PostMapping
     @Operation(summary = "Ajouter une nouvelle spécialité", description = "Ajoute une nouvelle spécialité et la renvoie.")
     public ResponseEntity<Specialite> createSpecialite(@Valid @RequestBody Specialite specialite) {
@@ -50,24 +50,12 @@ public class SpecialiteController {
         return ResponseEntity.ok(savedSpecialite);
     }
 
-    @PreAuthorize("hasRole('ADMIN') or hasRole('NORMAL')")
+    @PreAuthorize("hasRole('ADMIN')")
     @PutMapping("/{id}")
     @Operation(summary = "Modifier une spécialité", description = "Met à jour une spécialité existante avec les nouvelles informations fournies.")
     public ResponseEntity<Specialite> updateSpecialite(@PathVariable Long id, @RequestBody Specialite newSpecialite) {
         try {
             return ResponseEntity.ok(specialiteService.updateSpecialite(id, newSpecialite));
-        } catch (RuntimeException e) {
-            return ResponseEntity.notFound().build();
-        }
-    }
-
-    @PreAuthorize("hasRole('ADMIN') or hasRole('NORMAL')")
-    @DeleteMapping("/{id}")
-    @Operation(summary = "Supprimer une spécialité", description = "Supprime une spécialité en fonction de son identifiant.")
-    public ResponseEntity<Void> deleteSpecialite(@PathVariable Long id) {
-        try {
-            specialiteService.deleteSpecialite(id);
-            return ResponseEntity.noContent().build();
         } catch (RuntimeException e) {
             return ResponseEntity.notFound().build();
         }

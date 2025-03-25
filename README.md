@@ -25,7 +25,7 @@ Cette application est une API REST développée en **Spring Boot** permettant la
 
 ### 2. Gestion des étudiants 🎓
 - Ajout, modification, suppression et récupération des étudiants
-- Filtrage des étudiants par `promotion`, `parcours`, `spécialité`
+- Filtrage des étudiants par `promotion`, `cycle`, `spécialité`
 
 ### 3. Gestion des photos 🖼️
 - Upload d’une photo de profil pour chaque étudiant

@@ -41,11 +41,4 @@ public class SpecialiteService {
             return specialiteRepository.save(specialite);
         }).orElseThrow(() -> new SpecialiteNotFoundException("Spécialité avec ID " + id + " non trouvée"));
     }
-
-    public void deleteSpecialite(Long id) {
-        if (!specialiteRepository.existsById(id)) {
-            throw new SpecialiteNotFoundException("Spécialité avec ID " + id + " non trouvée");
-        }
-        specialiteRepository.deleteById(id);
-    }
 }

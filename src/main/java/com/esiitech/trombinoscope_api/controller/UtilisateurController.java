@@ -2,11 +2,9 @@ package com.esiitech.trombinoscope_api.controller;
 
 import com.esiitech.trombinoscope_api.DTOs.MotDePasseOublieRequest;
 import com.esiitech.trombinoscope_api.Entity.Utilisateur;
-import com.esiitech.trombinoscope_api.Exception.UtilisateurNotFoundException;
 import com.esiitech.trombinoscope_api.service.UtilisateurService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import io.swagger.v3.oas.annotations.parameters.RequestBody;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -33,40 +31,30 @@ public class UtilisateurController {
     @Operation(summary = "Lister tous les utilisateurs", description = "Retourne la liste de tous les utilisateurs. Accessible uniquement aux administrateurs.")
     @ApiResponse(responseCode = "200", description = "Liste des utilisateurs récupérée avec succès",
             content = @Content(schema = @Schema(implementation = Utilisateur.class)))
-    @PreAuthorize("hasRole('ADMIN') or hasRole('NORMAL')")
+    @PreAuthorize("hasRole('ADMIN')")
     @GetMapping
     public ResponseEntity<List<Utilisateur>> getAllUtilisateurs() {
         return ResponseEntity.ok(utilisateurService.getAllUtilisateurs());
     }
 
-    @Operation(summary = "Obtenir un utilisateur par ID", description = "Récupère les détails d'un utilisateur spécifique. Accessible uniquement aux administrateurs.")
+    @Operation(summary = "Obtenir un utilisateur par ID", description = "Récupère les détails d'un utilisateur spécifique.")
     @ApiResponse(responseCode = "200", description = "Utilisateur récupéré avec succès",
             content = @Content(schema = @Schema(implementation = Utilisateur.class)))
     @ApiResponse(responseCode = "404", description = "Utilisateur non trouvé")
-    @PreAuthorize("hasRole('ADMIN') or hasRole('NORMAL')")
+    @PreAuthorize("hasRole('ADMIN')")
     @GetMapping("/{id}")
     public ResponseEntity<Utilisateur> getUtilisateurById(@PathVariable Long id) {
-        Utilisateur utilisateur = utilisateurService.getUtilisateurById(id);
+        Utilisateur utilisateur = utilisateurService.getUtilisateurById(id); // Pas besoin de orElseThrow ici
         log.info("Utilisateur trouvé avec ID: {}", id);
         return ResponseEntity.ok(utilisateur);
     }
 
-    @Operation(summary = "Supprimer un utilisateur", description = "Supprime un utilisateur de la base de données. Accessible uniquement aux administrateurs.")
-    @ApiResponse(responseCode = "204", description = "Utilisateur supprimé avec succès")
-    @ApiResponse(responseCode = "404", description = "Utilisateur non trouvé")
-    @PreAuthorize("hasRole('ADMIN') or hasRole('NORMAL')")
-    @DeleteMapping("/{id}")
-    public ResponseEntity<Void> supprimerUtilisateur(@PathVariable Long id) {
-        utilisateurService.supprimerUtilisateur(id);
-        log.info("Utilisateur supprimé avec ID: {}", id);
-        return ResponseEntity.noContent().build();
-    }
 
-    @Operation(summary = "Modifier un utilisateur", description = "Modifie les informations d'un utilisateur existant. Accessible uniquement aux administrateurs.")
+    @Operation(summary = "Modifier un utilisateur", description = "Modifie les informations d'un utilisateur existant.")
     @ApiResponse(responseCode = "200", description = "Utilisateur modifié avec succès",
             content = @Content(schema = @Schema(implementation = Utilisateur.class)))
     @ApiResponse(responseCode = "404", description = "Utilisateur non trouvé")
-    @PreAuthorize("hasRole('ADMIN') or hasRole('NORMAL')")
+    @PreAuthorize("hasRole('ADMIN')")
     @PutMapping("/{id}")
     public ResponseEntity<Utilisateur> modifierUtilisateur(@PathVariable Long id, @Valid @RequestBody Utilisateur updatedUser) {
         Utilisateur utilisateur = utilisateurService.modifierUtilisateur(id, updatedUser);
@@ -76,34 +64,44 @@ public class UtilisateurController {
 
     @Operation(summary = "Demander la réinitialisation du mot de passe", description = "Permet à l'utilisateur de demander une réinitialisation de son mot de passe en envoyant son email.")
     @ApiResponse(responseCode = "200", description = "Un email de réinitialisation a été envoyé.")
-    @ApiResponse(responseCode = "400", description = "Email requis")
-    @ApiResponse(responseCode = "404", description = "Utilisateur non trouvé")
     @PostMapping("/mot-de-passe-oublie")
-    public ResponseEntity<String> motDePasseOublie(@RequestBody MotDePasseOublieRequest request) {
+    public ResponseEntity<String> motDePasseOublie(@Valid @RequestBody MotDePasseOublieRequest request) {
         String email = request.getEmail();
-
-        if (email == null || email.isEmpty()) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "L'email est requis.");
-        }
-
-        try {
-            utilisateurService.demandeReinitialisationMotDePasse(email);
-            return ResponseEntity.ok("Un email de réinitialisation a été envoyé.");
-        } catch (UtilisateurNotFoundException e) {
-            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Utilisateur non trouvé.");
-        }
+        log.info("Demande de réinitialisation du mot de passe pour l'email: {}", email);
+        utilisateurService.demandeReinitialisationMotDePasse(email);
+        return ResponseEntity.ok("Un email de réinitialisation a été envoyé.");
     }
 
     @Operation(summary = "Réinitialiser le mot de passe", description = "Permet de réinitialiser le mot de passe d'un utilisateur à l'aide d'un token valide.")
-    @ApiResponse(responseCode = "200", description = "Mot de passe réinitialisé avec succès.")
-    @ApiResponse(responseCode = "400", description = "Token invalide ou expiré")
     @PostMapping("/reinitialiser-mot-de-passe")
     public ResponseEntity<String> reinitialiserMotDePasse(@RequestParam String token, @RequestParam String nouveauMotDePasse) {
-        try {
-            utilisateurService.reinitialiserMotDePasse(token, nouveauMotDePasse);
-            return ResponseEntity.ok("Mot de passe réinitialisé avec succès.");
-        } catch (IllegalArgumentException e) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, e.getMessage());
-        }
+        log.info("Tentative de réinitialisation du mot de passe avec le token: {}", token);
+        utilisateurService.reinitialiserMotDePasse(token, nouveauMotDePasse);
+        return ResponseEntity.ok("Mot de passe réinitialisé avec succès.");
+    }
+
+    @Operation(summary = "Obtenir tous les utilisateurs actifs", description = "Récupère la liste des utilisateurs actifs")
+    @PreAuthorize("hasRole('ADMIN')")
+    @GetMapping("/actifs")
+    public List<Utilisateur> getUtilisateursActifs() {
+        return utilisateurService.getUtilisateursActifs();
+    }
+
+    @Operation(summary = "Désactiver un utilisateur", description = "Désactive un utilisateur en fonction de son ID")
+    @PreAuthorize("hasRole('ADMIN')")
+    @PutMapping("/desactiver/{id}")
+    public ResponseEntity<String> desactiverUtilisateur(@PathVariable Long id) {
+        utilisateurService.desactiverUtilisateur(id);
+        log.info("Utilisateur désactivé avec succès, ID: {}", id);
+        return ResponseEntity.ok("Utilisateur désactivé avec succès");
+    }
+
+    @Operation(summary = "Activer un utilisateur", description = "Active un utilisateur en fonction de son ID")
+    @PreAuthorize("hasRole('ADMIN')")
+    @PutMapping("/activer/{id}")
+    public ResponseEntity<String> activerUtilisateur(@PathVariable Long id) {
+        utilisateurService.activerUtilisateur(id);
+        log.info("Utilisateur activé avec succès, ID: {}", id);
+        return ResponseEntity.ok("Utilisateur activé avec succès");
     }
 }

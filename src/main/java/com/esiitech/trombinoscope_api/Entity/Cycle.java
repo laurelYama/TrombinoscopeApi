@@ -11,7 +11,7 @@ import lombok.NoArgsConstructor;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-public class Parcours {
+public class Cycle {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;

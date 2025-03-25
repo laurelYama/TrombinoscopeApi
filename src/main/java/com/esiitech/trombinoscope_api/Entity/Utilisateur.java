@@ -16,7 +16,7 @@ import java.util.Collections;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-@Table(name="users")
+@Table(name = "users")
 public class Utilisateur implements UserDetails {
 
     @Id
@@ -26,7 +26,7 @@ public class Utilisateur implements UserDetails {
     @Column(nullable = false, unique = true)
     private String email;
 
-    @Column(nullable = false, length = 100)
+    @Column(nullable = false, length = 100, unique = true)
     private String username;
 
     @Column(nullable = false)
@@ -36,6 +36,7 @@ public class Utilisateur implements UserDetails {
     @Column(nullable = false)
     private Role role;
 
+    @Builder.Default
     @Column(nullable = false)
     private boolean forcePasswordChange = true;
 
@@ -45,11 +46,13 @@ public class Utilisateur implements UserDetails {
     @Column(nullable = false)
     private LocalDateTime updatedAt;
 
-    @Column(name = "reset_token")
     private String resetToken;
 
-    @Column(name = "reset_token_timestamp")
-    private LocalDateTime resetTokenTimestamp; // Ajout du timestamp du token
+    private LocalDateTime resetTokenTimestamp;
+
+    @Builder.Default
+    @Column(nullable = false)
+    private boolean actif = true;
 
     @PrePersist
     protected void onCreate() {
@@ -63,10 +66,9 @@ public class Utilisateur implements UserDetails {
     }
 
     // ========== Implémentation des méthodes de UserDetails ==========
-
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
-        return Collections.singletonList(new SimpleGrantedAuthority("ROLE_" + this.role.name()));
+        return Collections.singletonList(new SimpleGrantedAuthority(role.name()));
     }
 
     @Override
@@ -81,12 +83,11 @@ public class Utilisateur implements UserDetails {
 
     @Override
     public boolean isCredentialsNonExpired() {
-        // Le mot de passe est expiré si forcePasswordChange est true
         return !forcePasswordChange;
     }
 
     @Override
     public boolean isEnabled() {
-        return true;
+        return actif;
     }
 }

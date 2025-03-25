@@ -45,14 +45,6 @@ public class PromotionService {
                 .orElseThrow(() -> new PromotionNotFoundException("Promotion avec ID " + id + " non trouvée"));
     }
 
-
-    public void deletePromotion(Long id) {
-        if (!promotionRepository.existsById(id)) {
-            throw new PromotionNotFoundException("Promotion avec ID " + id + " non trouvée");
-        }
-        promotionRepository.deleteById(id);
-    }
-
     public boolean existsByAnnee(int annee) {
         return promotionRepository.existsByAnnee(annee);
     }

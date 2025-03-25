@@ -10,14 +10,8 @@ import java.util.List;
 
 @Repository
 public interface EtudiantRepository extends JpaRepository<Etudiant, Long> {
-    List<Etudiant> findByPromotionId(Long promotionId);
-    List<Etudiant> findByParcoursId(Long parcoursId);
-    List<Etudiant> findBySpecialiteId(Long specialiteId);
-    List<Etudiant> findByPromotionIdAndParcoursIdAndSpecialiteId(Long promotionId, Long parcoursId, Long specialiteId);
 
-    // Pagination pour éviter de renvoyer une liste trop volumineuse
+    List<Etudiant> findByActifTrue();
     Page<Etudiant> findByNomContainingIgnoreCaseOrPrenomContainingIgnoreCase(String nom, String prenom, Pageable pageable);
-
-
 
 }

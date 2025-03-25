@@ -27,7 +27,7 @@ public class PromotionController {
 
     @Operation(summary = "Récupérer toutes les promotions",
             description = "Permet d'obtenir la liste de toutes les promotions.")
-    @PreAuthorize("hasRole('ADMIN') or hasRole('NORMAL')")
+    @PreAuthorize("hasRole('ADMIN')")
     @GetMapping
     public List<Promotion> getAllPromotions() {
         return promotionService.getAllPromotions();
@@ -41,7 +41,7 @@ public class PromotionController {
                                     schema = @Schema(implementation = Promotion.class))),
                     @ApiResponse(responseCode = "404", description = "Promotion non trouvée")
             })
-    @PreAuthorize("hasRole('ADMIN') or hasRole('NORMAL')")
+    @PreAuthorize("hasRole('ADMIN')")
     @GetMapping("/{id}")
     public ResponseEntity<Promotion> getPromotionById(@PathVariable Long id) {
         try {
@@ -54,7 +54,7 @@ public class PromotionController {
 
     @Operation(summary = "Ajouter une nouvelle promotion",
             description = "Permet de créer une nouvelle promotion.")
-    @PreAuthorize("hasRole('ADMIN') or hasRole('NORMAL')")
+    @PreAuthorize("hasRole('ADMIN')")
     @PostMapping
     public ResponseEntity<Promotion> createPromotion(@RequestBody Promotion promotion) {
         if (promotionService.existsByAnnee(promotion.getAnnee())) {
@@ -66,7 +66,7 @@ public class PromotionController {
 
     @Operation(summary = "Modifier une promotion existante",
             description = "Permet de mettre à jour une promotion existante avec un nouvel ID.")
-    @PreAuthorize("hasRole('ADMIN') or hasRole('NORMAL')")
+    @PreAuthorize("hasRole('ADMIN')")
     @PutMapping("/{id}")
     public ResponseEntity<Promotion> updatePromotion(@PathVariable Long id, @RequestBody Promotion newPromotion) {
         try {
@@ -74,14 +74,5 @@ public class PromotionController {
         } catch (RuntimeException e) {
             return ResponseEntity.notFound().build();
         }
-    }
-
-    @Operation(summary = "Supprimer une promotion",
-            description = "Permet de supprimer une promotion en fournissant son ID.")
-    @PreAuthorize("hasRole('ADMIN') or hasRole('NORMAL')")
-    @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deletePromotion(@PathVariable Long id) {
-        promotionService.deletePromotion(id);
-        return ResponseEntity.noContent().build();
     }
 }

@@ -1,15 +1,19 @@
 package com.esiitech.trombinoscope_api.service;
 
+import com.esiitech.trombinoscope_api.DTOs.EtudiantDto;
+import com.esiitech.trombinoscope_api.Entity.Diplome;
 import com.esiitech.trombinoscope_api.Entity.Etudiant;
+import com.esiitech.trombinoscope_api.Exception.EtudiantNotFoundException;
+import com.esiitech.trombinoscope_api.repository.DiplomeRepository;
+import com.esiitech.trombinoscope_api.repository.EtudiantPromoRepository;
 import com.esiitech.trombinoscope_api.repository.EtudiantRepository;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
-import org.springframework.http.HttpStatus;
+import jakarta.transaction.Transactional;
+import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
-import org.springframework.web.server.ResponseStatusException;
 
+import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -17,15 +21,18 @@ import java.nio.file.StandardCopyOption;
 import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 @Service
+@RequiredArgsConstructor
 public class EtudiantService {
 
     private final EtudiantRepository etudiantRepository;
+    private final EtudiantPromoRepository etudiantPromoRepository;
+    private final DiplomeRepository diplomeRepository; // ✅ Ajout du DiplomeRepository
 
-    public EtudiantService(EtudiantRepository etudiantRepository) {
-        this.etudiantRepository = etudiantRepository;
-    }
+    @Value("${app.upload.dir}")
+    private String uploadDir;
 
     public List<Etudiant> getAllEtudiants() {
         return etudiantRepository.findAll();
@@ -35,70 +42,95 @@ public class EtudiantService {
         return etudiantRepository.findById(id);
     }
 
-    public Etudiant saveEtudiant(Etudiant etudiant) {
+    public List<EtudiantDto> getAllEtudiantsWithPromos() {
+        return etudiantRepository.findAll().stream()
+                .map(etudiant -> new EtudiantDto(etudiant, etudiantPromoRepository.findByEtudiantId(etudiant.getId())))
+                .collect(Collectors.toList());
+    }
+
+    @Transactional
+    public Etudiant ajouterEtudiant(Etudiant etudiant) {
         return etudiantRepository.save(etudiant);
     }
 
-    public void deleteEtudiant(Long id) {
-        if (!etudiantRepository.existsById(id)) {
-            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Étudiant non trouvé");
-        }
-        etudiantRepository.deleteById(id);
+    public EtudiantDto getEtudiantWithPromo(Long id) {
+        Etudiant etudiant = etudiantRepository.findById(id)
+                .orElseThrow(() -> new EtudiantNotFoundException("Étudiant non trouvé"));
+        return new EtudiantDto(etudiant, etudiantPromoRepository.findByEtudiantId(id));
     }
 
-    public Page<Etudiant> searchEtudiants(String keyword, int page, int size) {
-        Pageable pageable = PageRequest.of(page, size);
-        return etudiantRepository.findByNomContainingIgnoreCaseOrPrenomContainingIgnoreCase(keyword, keyword, pageable);
+    @Transactional
+    public Etudiant modifierEtudiant(Long id, Etudiant etudiantModifie) {
+        return etudiantRepository.findById(id).map(etudiant -> {
+            etudiant.setNom(etudiantModifie.getNom());
+            etudiant.setPrenom(etudiantModifie.getPrenom());
+            etudiant.setEmail(etudiantModifie.getEmail());
+            etudiant.setActif(etudiantModifie.isActif());
+            return etudiantRepository.save(etudiant);
+        }).orElseThrow(() -> new EtudiantNotFoundException("Étudiant non trouvé avec l'ID: " + id));
+    }
+
+    @Transactional
+    public Etudiant ajouterDiplomeAEtudiant(Long etudiantId, Long diplomeId) {
+        Etudiant etudiant = etudiantRepository.findById(etudiantId)
+                .orElseThrow(() -> new RuntimeException("Étudiant non trouvé"));
+
+        Diplome diplome = diplomeRepository.findById(diplomeId)
+                .orElseThrow(() -> new RuntimeException("Diplôme non trouvé"));
+
+        etudiant.getDiplomes().add(diplome);
+        return etudiantRepository.save(etudiant);
+    }
+
+    @Transactional
+    public void activerEtudiant(Long id) {
+        Etudiant etudiant = etudiantRepository.findById(id)
+                .orElseThrow(() -> new EtudiantNotFoundException("Étudiant non trouvé"));
+        etudiant.setActif(true);
+        etudiantRepository.save(etudiant);
+    }
+
+    public List<Etudiant> getEtudiantsActifs() {
+        return etudiantRepository.findByActifTrue();
+    }
+
+    @Transactional
+    public void desactiverEtudiant(Long id) {
+        Etudiant etudiant = etudiantRepository.findById(id)
+                .orElseThrow(() -> new EtudiantNotFoundException("Étudiant non trouvé"));
+        etudiant.setActif(false);
+        etudiantRepository.save(etudiant);
     }
 
     public Path getPhotoPathByEtudiantId(Long id) {
         Etudiant etudiant = etudiantRepository.findById(id)
-                .orElseThrow(() -> new NoSuchElementException("Étudiant non trouvé avec l'ID : " + id));
+                .orElseThrow(() -> new EtudiantNotFoundException("Étudiant non trouvé avec l'ID : " + id));
 
-        String photoPath = etudiant.getPhotoPath(); // Assure-toi que la classe `Etudiant` a bien un champ `photoPath`
-        if (photoPath == null || photoPath.isEmpty()) {
+        if (etudiant.getPhotoPath() == null || etudiant.getPhotoPath().isEmpty()) {
             throw new NoSuchElementException("Aucune photo trouvée pour l'étudiant avec l'ID : " + id);
         }
-
-        return Paths.get("uploads/photos").resolve(photoPath);
+        return Paths.get(uploadDir).resolve(etudiant.getPhotoPath());
     }
 
-    public List<Etudiant> filtrerEtudiants(Long promotionId, Long parcoursId, Long specialiteId) {
-        List<Etudiant> etudiants;
-
-        if (promotionId != null && parcoursId != null && specialiteId != null) {
-            etudiants = etudiantRepository.findByPromotionIdAndParcoursIdAndSpecialiteId(promotionId, parcoursId, specialiteId);
-        } else if (promotionId != null) {
-            etudiants = etudiantRepository.findByPromotionId(promotionId);
-        } else if (parcoursId != null) {
-            etudiants = etudiantRepository.findByParcoursId(parcoursId);
-        } else if (specialiteId != null) {
-            etudiants = etudiantRepository.findBySpecialiteId(specialiteId);
-        } else {
-            etudiants = etudiantRepository.findAll();
-        }
-
-        if (etudiants.isEmpty()) {
-            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Aucun étudiant trouvé avec ces critères");
-        }
-
-        return etudiants;
-    }
-
-    public void uploadPhoto(Long id, MultipartFile file) throws Exception {
+    @Transactional
+    public void uploadPhoto(Long id, MultipartFile file) throws IOException {
         Etudiant etudiant = etudiantRepository.findById(id)
-                .orElseThrow(() -> new NoSuchElementException("Étudiant non trouvé !"));
+                .orElseThrow(() -> new EtudiantNotFoundException("Étudiant non trouvé !"));
 
-        // Définir le répertoire où enregistrer l'image
-        String uploadDir = "uploads";
-        Files.createDirectories(Path.of(uploadDir)); // Crée le dossier s'il n'existe pas
+        if (file.getContentType() == null || !file.getContentType().startsWith("image/")) {
+            throw new IllegalArgumentException("Seuls les fichiers images sont autorisés !");
+        }
 
-        // Sauvegarde du fichier
+        final long MAX_SIZE = 2 * 1024 * 1024;
+        if (file.getSize() > MAX_SIZE) {
+            throw new IllegalArgumentException("La taille de l'image ne doit pas dépasser 2 Mo !");
+        }
+
+        Files.createDirectories(Paths.get(uploadDir));
         String filename = id + "_" + file.getOriginalFilename();
-        Path filePath = Path.of(uploadDir, filename);
+        Path filePath = Paths.get(uploadDir, filename);
         Files.copy(file.getInputStream(), filePath, StandardCopyOption.REPLACE_EXISTING);
 
-        // Mise à jour de l'étudiant avec le chemin de l'image
         etudiant.setPhotoPath(filename);
         etudiantRepository.save(etudiant);
     }

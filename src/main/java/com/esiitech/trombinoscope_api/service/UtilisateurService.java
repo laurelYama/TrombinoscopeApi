@@ -28,22 +28,23 @@ public class UtilisateurService {
 
     public Utilisateur getUtilisateurById(Long id) {
         return utilisateurRepository.findById(id)
-                .orElseThrow(() -> new UtilisateurNotFoundException(id));
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Utilisateur non trouvé"));
     }
 
-    public void supprimerUtilisateur(Long id) {
-        if (!utilisateurRepository.existsById(id)) {
-            throw new UtilisateurNotFoundException(id);
-        }
-        utilisateurRepository.deleteById(id);
-    }
 
     public Utilisateur modifierUtilisateur(Long id, Utilisateur updatedUser) {
         return utilisateurRepository.findById(id).map(utilisateur -> {
+            if (!utilisateur.getEmail().equals(updatedUser.getEmail()) &&
+                    utilisateurRepository.findByEmail(updatedUser.getEmail()).isPresent()) {
+                throw new IllegalArgumentException("Cet email est déjà utilisé par un autre utilisateur.");
+            }
+
             utilisateur.setEmail(updatedUser.getEmail());
+
             if (updatedUser.getPassword() != null && !updatedUser.getPassword().isEmpty()) {
                 utilisateur.setPassword(passwordEncoder.encode(updatedUser.getPassword()));
             }
+
             return utilisateurRepository.save(utilisateur);
         }).orElseThrow(() -> new UtilisateurNotFoundException(id));
     }
@@ -57,10 +58,8 @@ public class UtilisateurService {
         utilisateur.setResetTokenTimestamp(LocalDateTime.now());
         utilisateurRepository.save(utilisateur);
 
-        // Générer le lien de réinitialisation
         String resetLink = "http://localhost:8080/api/utilisateurs/reinitialiser-mot-de-passe?token=" + token;
 
-        // Envoyer l'email avec le lien de réinitialisation
         emailService.sendSimpleMessage(utilisateur.getEmail(), "Réinitialisation du mot de passe",
                 "Cliquez sur ce lien pour réinitialiser votre mot de passe : " + resetLink);
     }
@@ -69,24 +68,36 @@ public class UtilisateurService {
         Utilisateur utilisateur = utilisateurRepository.findByResetToken(token)
                 .orElseThrow(() -> new UtilisateurNotFoundException("Token invalide ou expiré"));
 
-        // Vérification si le token est expiré
         if (utilisateur.getResetTokenTimestamp() != null && isTokenExpired(utilisateur.getResetTokenTimestamp())) {
             throw new IllegalArgumentException("Le token de réinitialisation a expiré");
         }
 
         utilisateur.setPassword(passwordEncoder.encode(nouveauMotDePasse));
-        utilisateur.setResetToken(null); // Supprimer le token après utilisation
-        utilisateur.setResetTokenTimestamp(null); // Supprimer également le timestamp
+        utilisateur.setResetToken(null);
+        utilisateur.setResetTokenTimestamp(null);
+        utilisateur.setForcePasswordChange(true); // Forcer le changement de mot de passe après réinitialisation
         utilisateurRepository.save(utilisateur);
     }
 
-    // Méthode pour vérifier si le token est expiré (ici 30 minutes)
     private boolean isTokenExpired(LocalDateTime resetTokenTimestamp) {
-        LocalDateTime now = LocalDateTime.now();
-        Duration duration = Duration.between(resetTokenTimestamp, now);
-        long minutesElapsed = duration.toMinutes();  // Durée en minutes
-        return minutesElapsed > 30;  // le token expire après 30 minutes
+        return Duration.between(resetTokenTimestamp, LocalDateTime.now()).toMinutes() > 30;
     }
 
+    public List<Utilisateur> getUtilisateursActifs() {
+        return utilisateurRepository.findByActifTrue();
+    }
 
+    public void desactiverUtilisateur(Long id) {
+        Utilisateur utilisateur = utilisateurRepository.findById(id)
+                .orElseThrow(() -> new UtilisateurNotFoundException(id));
+        utilisateur.setActif(false);
+        utilisateurRepository.save(utilisateur);
+    }
+
+    public void activerUtilisateur(Long id) {
+        Utilisateur utilisateur = utilisateurRepository.findById(id)
+                .orElseThrow(() -> new UtilisateurNotFoundException(id));
+        utilisateur.setActif(true);
+        utilisateurRepository.save(utilisateur);
+    }
 }
