@@ -1,14 +1,22 @@
-# Étape 1: Utiliser l'image OpenJDK comme base
-FROM openjdk:17-jdk-slim
+FROM eclipse-temurin:17-jdk-alpine as builder
 
-# Étape 2: Définir le répertoire de travail dans le conteneur
-WORKDIR /app
+WORKDIR application
 
-# Étape 3: Copier le fichier JAR généré par Maven dans le conteneur
-COPY target/trombinoscope-api-0.0.1-SNAPSHOT.jar trombinoscope-api.jar
+COPY mvnw .
+COPY .mvn .mvn
+COPY pom.xml .
+COPY src src
 
-# Étape 4: Exposer le port 8080 sur lequel l'application sera exécutée
-EXPOSE 8080
+RUN chmod +x mvnw
+RUN ./mvnw clean package -DskipTests
+RUN java -Djarmode=layertools -jar target/*.jar extract
 
-# Étape 5: Lancer l'application Spring Boot
-ENTRYPOINT ["java", "-jar", "trombinoscope-api.jar"]
+FROM eclipse-temurin:21-jre-alpine
+WORKDIR application
+
+COPY --from=builder application/dependencies/ ./
+COPY --from=builder application/spring-boot-loader/ ./
+COPY --from=builder application/snapshot-dependencies/ ./
+COPY --from=builder application/application/ ./
+
+ENTRYPOINT ["java", "org.springframework.boot.loader.launch.JarLauncher"]
