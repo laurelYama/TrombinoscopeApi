@@ -1,7 +1,7 @@
 package com.esiitech.trombinoscope_api.controller;
 
 import com.esiitech.trombinoscope_api.DTOs.MotDePasseOublieRequest;
-import com.esiitech.trombinoscope_api.Entity.Utilisateur;
+import com.esiitech.trombinoscope_api.DTOs.UtilisateurDto;
 import com.esiitech.trombinoscope_api.service.UtilisateurService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -15,7 +15,6 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.server.ResponseStatusException;
 
 import java.util.List;
 
@@ -30,36 +29,35 @@ public class UtilisateurController {
 
     @Operation(summary = "Lister tous les utilisateurs", description = "Retourne la liste de tous les utilisateurs. Accessible uniquement aux administrateurs.")
     @ApiResponse(responseCode = "200", description = "Liste des utilisateurs récupérée avec succès",
-            content = @Content(schema = @Schema(implementation = Utilisateur.class)))
+            content = @Content(schema = @Schema(implementation = UtilisateurDto.class)))
     @PreAuthorize("hasRole('ADMIN')")
     @GetMapping
-    public ResponseEntity<List<Utilisateur>> getAllUtilisateurs() {
+    public ResponseEntity<List<UtilisateurDto>> getAllUtilisateurs() {
         return ResponseEntity.ok(utilisateurService.getAllUtilisateurs());
     }
 
     @Operation(summary = "Obtenir un utilisateur par ID", description = "Récupère les détails d'un utilisateur spécifique.")
     @ApiResponse(responseCode = "200", description = "Utilisateur récupéré avec succès",
-            content = @Content(schema = @Schema(implementation = Utilisateur.class)))
+            content = @Content(schema = @Schema(implementation = UtilisateurDto.class)))
     @ApiResponse(responseCode = "404", description = "Utilisateur non trouvé")
     @PreAuthorize("hasRole('ADMIN')")
     @GetMapping("/{id}")
-    public ResponseEntity<Utilisateur> getUtilisateurById(@PathVariable Long id) {
-        Utilisateur utilisateur = utilisateurService.getUtilisateurById(id); // Pas besoin de orElseThrow ici
+    public ResponseEntity<UtilisateurDto> getUtilisateurById(@PathVariable Long id) {
+        UtilisateurDto utilisateurDto = utilisateurService.getUtilisateurById(id);
         log.info("Utilisateur trouvé avec ID: {}", id);
-        return ResponseEntity.ok(utilisateur);
+        return ResponseEntity.ok(utilisateurDto);
     }
-
 
     @Operation(summary = "Modifier un utilisateur", description = "Modifie les informations d'un utilisateur existant.")
     @ApiResponse(responseCode = "200", description = "Utilisateur modifié avec succès",
-            content = @Content(schema = @Schema(implementation = Utilisateur.class)))
+            content = @Content(schema = @Schema(implementation = UtilisateurDto.class)))
     @ApiResponse(responseCode = "404", description = "Utilisateur non trouvé")
     @PreAuthorize("hasRole('ADMIN')")
     @PutMapping("/{id}")
-    public ResponseEntity<Utilisateur> modifierUtilisateur(@PathVariable Long id, @Valid @RequestBody Utilisateur updatedUser) {
-        Utilisateur utilisateur = utilisateurService.modifierUtilisateur(id, updatedUser);
+    public ResponseEntity<UtilisateurDto> modifierUtilisateur(@PathVariable Long id, @Valid @RequestBody UtilisateurDto updatedUserDto) {
+        UtilisateurDto utilisateurModifie = utilisateurService.modifierUtilisateur(id, updatedUserDto);
         log.info("Modification de l'utilisateur avec ID: {}", id);
-        return ResponseEntity.ok(utilisateur);
+        return ResponseEntity.ok(utilisateurModifie);
     }
 
     @Operation(summary = "Demander la réinitialisation du mot de passe", description = "Permet à l'utilisateur de demander une réinitialisation de son mot de passe en envoyant son email.")
@@ -83,8 +81,8 @@ public class UtilisateurController {
     @Operation(summary = "Obtenir tous les utilisateurs actifs", description = "Récupère la liste des utilisateurs actifs")
     @PreAuthorize("hasRole('ADMIN')")
     @GetMapping("/actifs")
-    public List<Utilisateur> getUtilisateursActifs() {
-        return utilisateurService.getUtilisateursActifs();
+    public ResponseEntity<List<UtilisateurDto>> getUtilisateursActifs() {
+        return ResponseEntity.ok(utilisateurService.getUtilisateursActifs());
     }
 
     @Operation(summary = "Désactiver un utilisateur", description = "Désactive un utilisateur en fonction de son ID")

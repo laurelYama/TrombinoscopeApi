@@ -34,7 +34,7 @@ public class EtudiantDto {
                 .collect(Collectors.toList());
     }
 
-    // ✅ Méthode fromEntity pour convertir un Etudiant en EtudiantDto
+    // Méthode fromEntity pour convertir un Etudiant en EtudiantDto
     public static EtudiantDto fromEntity(Etudiant etudiant, List<EtudiantPromo> etudiantPromos) {
         return new EtudiantDto(etudiant, etudiantPromos);
     }

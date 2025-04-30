@@ -19,7 +19,7 @@ public class DiplomeService {
     @Autowired
     private EtudiantRepository etudiantRepository;
 
-    // 📌 Créer un diplôme avec un numéro unique
+    // Créer un diplôme avec un numéro unique
     public Diplome createDiplome(DiplomeRequest request) {
         // Vérifier si le numéro de diplôme existe déjà
         if (diplomeRepository.existsByNumero(request.getNumero())) {
@@ -37,19 +37,19 @@ public class DiplomeService {
         return diplomeRepository.save(diplome);
     }
 
-    // 📌 Récupérer un diplôme par son numéro
+    // Récupérer un diplôme par son numéro
     public Diplome getDiplomeByNumero(String numero) {
         return diplomeRepository.findByNumero(numero)
                 .orElseThrow(() -> new NoSuchElementException("Diplôme introuvable"));
     }
 
-    // 📌 Supprimer un diplôme
+    // Supprimer un diplôme
     public void deleteDiplome(String numero) {
         Diplome diplome = getDiplomeByNumero(numero);
         diplomeRepository.delete(diplome);
     }
 
-    // 📌 Mettre à jour un diplôme
+    // Mettre à jour un diplôme
     public Diplome updateDiplome(String numero, DiplomeRequest request) {
         Diplome diplome = getDiplomeByNumero(numero);
         diplome.setNom(request.getNom());

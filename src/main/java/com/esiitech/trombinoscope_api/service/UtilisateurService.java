@@ -1,9 +1,12 @@
 package com.esiitech.trombinoscope_api.service;
 
+import com.esiitech.trombinoscope_api.DTOs.UtilisateurDto;
 import com.esiitech.trombinoscope_api.Entity.Utilisateur;
 import com.esiitech.trombinoscope_api.Exception.UtilisateurNotFoundException;
+import com.esiitech.trombinoscope_api.mapper.UtilisateurMapper;
 import com.esiitech.trombinoscope_api.repository.UtilisateurRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -21,19 +24,36 @@ public class UtilisateurService {
     private final UtilisateurRepository utilisateurRepository;
     private final PasswordEncoder passwordEncoder;
     private final EmailService emailService;
+    private final UtilisateurMapper utilisateurMapper;
 
-    public List<Utilisateur> getAllUtilisateurs() {
-        return utilisateurRepository.findAll();
+    @Autowired
+    public UtilisateurService(UtilisateurRepository utilisateurRepository,
+                              UtilisateurMapper utilisateurMapper,
+                              PasswordEncoder passwordEncoder,
+                              EmailService emailService) {
+        this.utilisateurRepository = utilisateurRepository;
+        this.utilisateurMapper = utilisateurMapper;
+        this.passwordEncoder = passwordEncoder;
+        this.emailService = emailService;
     }
 
-    public Utilisateur getUtilisateurById(Long id) {
-        return utilisateurRepository.findById(id)
+
+    public List<UtilisateurDto> getAllUtilisateurs() {
+        List<Utilisateur> utilisateurs = utilisateurRepository.findAll();
+        return utilisateurMapper.toDtoList(utilisateurs);
+    }
+
+    public UtilisateurDto getUtilisateurById(Long id) {
+        Utilisateur utilisateur = utilisateurRepository.findById(id)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Utilisateur non trouvé"));
+        return utilisateurMapper.toDto(utilisateur);
     }
 
 
-    public Utilisateur modifierUtilisateur(Long id, Utilisateur updatedUser) {
-        return utilisateurRepository.findById(id).map(utilisateur -> {
+
+    public UtilisateurDto modifierUtilisateur(Long id, UtilisateurDto updatedDto) {
+        Utilisateur updatedUser = utilisateurMapper.toEntity(updatedDto);
+        Utilisateur savedUser = utilisateurRepository.findById(id).map(utilisateur -> {
             if (!utilisateur.getEmail().equals(updatedUser.getEmail()) &&
                     utilisateurRepository.findByEmail(updatedUser.getEmail()).isPresent()) {
                 throw new IllegalArgumentException("Cet email est déjà utilisé par un autre utilisateur.");
@@ -47,7 +67,10 @@ public class UtilisateurService {
 
             return utilisateurRepository.save(utilisateur);
         }).orElseThrow(() -> new UtilisateurNotFoundException(id));
+
+        return utilisateurMapper.toDto(savedUser);
     }
+
 
     public void demandeReinitialisationMotDePasse(String email) {
         Utilisateur utilisateur = utilisateurRepository.findByEmail(email)
@@ -58,7 +81,7 @@ public class UtilisateurService {
         utilisateur.setResetTokenTimestamp(LocalDateTime.now());
         utilisateurRepository.save(utilisateur);
 
-        String resetLink = "http://localhost:8080/api/utilisateurs/reinitialiser-mot-de-passe?token=" + token;
+        String resetLink = "http://localhost:4200/reinitialiser-mot-de-passe?token=" + token;
 
         emailService.sendSimpleMessage(utilisateur.getEmail(), "Réinitialisation du mot de passe",
                 "Cliquez sur ce lien pour réinitialiser votre mot de passe : " + resetLink);
@@ -83,9 +106,10 @@ public class UtilisateurService {
         return Duration.between(resetTokenTimestamp, LocalDateTime.now()).toMinutes() > 30;
     }
 
-    public List<Utilisateur> getUtilisateursActifs() {
-        return utilisateurRepository.findByActifTrue();
+    public List<UtilisateurDto> getUtilisateursActifs() {
+        return utilisateurMapper.toDtoList(utilisateurRepository.findByActifTrue());
     }
+
 
     public void desactiverUtilisateur(Long id) {
         Utilisateur utilisateur = utilisateurRepository.findById(id)

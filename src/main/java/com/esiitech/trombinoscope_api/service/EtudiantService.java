@@ -29,7 +29,7 @@ public class EtudiantService {
 
     private final EtudiantRepository etudiantRepository;
     private final EtudiantPromoRepository etudiantPromoRepository;
-    private final DiplomeRepository diplomeRepository; // ✅ Ajout du DiplomeRepository
+    private final DiplomeRepository diplomeRepository; // Ajout du DiplomeRepository
 
     @Value("${app.upload.dir}")
     private String uploadDir;
