@@ -1,5 +1,6 @@
 package com.esiitech.trombinoscope_api.service;
 
+import com.esiitech.trombinoscope_api.DTOs.ModifierUtilisateurRequest;
 import com.esiitech.trombinoscope_api.DTOs.UtilisateurDto;
 import com.esiitech.trombinoscope_api.Entity.Utilisateur;
 import com.esiitech.trombinoscope_api.Exception.UtilisateurNotFoundException;
@@ -8,6 +9,8 @@ import com.esiitech.trombinoscope_api.repository.UtilisateurRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
@@ -37,7 +40,6 @@ public class UtilisateurService {
         this.emailService = emailService;
     }
 
-
     public List<UtilisateurDto> getAllUtilisateurs() {
         List<Utilisateur> utilisateurs = utilisateurRepository.findAll();
         return utilisateurMapper.toDtoList(utilisateurs);
@@ -49,28 +51,69 @@ public class UtilisateurService {
         return utilisateurMapper.toDto(utilisateur);
     }
 
+    public UtilisateurDto modifierUtilisateur(Long id, ModifierUtilisateurRequest request) {
+        Utilisateur utilisateur = utilisateurRepository.findById(id)
+                .orElseThrow(() -> new UtilisateurNotFoundException(id));
 
-
-    public UtilisateurDto modifierUtilisateur(Long id, UtilisateurDto updatedDto) {
-        Utilisateur updatedUser = utilisateurMapper.toEntity(updatedDto);
-        Utilisateur savedUser = utilisateurRepository.findById(id).map(utilisateur -> {
-            if (!utilisateur.getEmail().equals(updatedUser.getEmail()) &&
-                    utilisateurRepository.findByEmail(updatedUser.getEmail()).isPresent()) {
+        if (request.getEmail() != null && !request.getEmail().equals(utilisateur.getEmail())) {
+            if (utilisateurRepository.findByEmail(request.getEmail()).isPresent()) {
                 throw new IllegalArgumentException("Cet email est déjà utilisé par un autre utilisateur.");
             }
+            utilisateur.setEmail(request.getEmail());
+        }
 
-            utilisateur.setEmail(updatedUser.getEmail());
+        if (request.getUsername() != null) {
+            utilisateur.setUsername(request.getUsername());
+        }
 
-            if (updatedUser.getPassword() != null && !updatedUser.getPassword().isEmpty()) {
-                utilisateur.setPassword(passwordEncoder.encode(updatedUser.getPassword()));
-            }
+        if (request.getRole() != null) {
+            utilisateur.setRole(request.getRole());
+        }
 
-            return utilisateurRepository.save(utilisateur);
-        }).orElseThrow(() -> new UtilisateurNotFoundException(id));
+        if (request.getMotDePasse() != null && !request.getMotDePasse().isEmpty()) {
+            utilisateur.setPassword(passwordEncoder.encode(request.getMotDePasse()));
+        }
 
+        Utilisateur savedUser = utilisateurRepository.save(utilisateur);
         return utilisateurMapper.toDto(savedUser);
     }
 
+
+    public UtilisateurDto getMonProfil() {
+        Utilisateur utilisateur = getUtilisateurConnecte();
+        return utilisateurMapper.toDto(utilisateur);
+    }
+
+    public UtilisateurDto modifierMonProfil(String nouveauUsername, String nouveauMotDePasse) {
+        Utilisateur utilisateur = getUtilisateurConnecte();
+
+        if (nouveauUsername != null && !nouveauUsername.isEmpty()) {
+            utilisateur.setUsername(nouveauUsername);
+        }
+
+        if (nouveauMotDePasse != null && !nouveauMotDePasse.isEmpty()) {
+            utilisateur.setPassword(passwordEncoder.encode(nouveauMotDePasse));
+            utilisateur.setForcePasswordChange(false);
+        }
+
+        utilisateurRepository.save(utilisateur);
+        return utilisateurMapper.toDto(utilisateur);
+    }
+
+    private Utilisateur getUtilisateurConnecte() {
+        String email = getEmailUtilisateurConnecte();
+        return utilisateurRepository.findByEmail(email)
+                .orElseThrow(() -> new UtilisateurNotFoundException("Utilisateur non trouvé"));
+    }
+
+    private String getEmailUtilisateurConnecte() {
+        Object principal = SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        if (principal instanceof UserDetails) {
+            return ((UserDetails) principal).getUsername();
+        } else {
+            return principal.toString();
+        }
+    }
 
     public void demandeReinitialisationMotDePasse(String email) {
         Utilisateur utilisateur = utilisateurRepository.findByEmail(email)
@@ -98,7 +141,7 @@ public class UtilisateurService {
         utilisateur.setPassword(passwordEncoder.encode(nouveauMotDePasse));
         utilisateur.setResetToken(null);
         utilisateur.setResetTokenTimestamp(null);
-        utilisateur.setForcePasswordChange(true); // Forcer le changement de mot de passe après réinitialisation
+        utilisateur.setForcePasswordChange(true);
         utilisateurRepository.save(utilisateur);
     }
 
@@ -109,7 +152,6 @@ public class UtilisateurService {
     public List<UtilisateurDto> getUtilisateursActifs() {
         return utilisateurMapper.toDtoList(utilisateurRepository.findByActifTrue());
     }
-
 
     public void desactiverUtilisateur(Long id) {
         Utilisateur utilisateur = utilisateurRepository.findById(id)
@@ -124,4 +166,41 @@ public class UtilisateurService {
         utilisateur.setActif(true);
         utilisateurRepository.save(utilisateur);
     }
+
+    public boolean doitChangerMotDePasse() {
+        Utilisateur utilisateur = getUtilisateurConnecte(); // méthode existante dans ton service
+        return utilisateur.isForcePasswordChange();
+    }
+
+    public void changerMotDePasse(String ancienMotDePasse, String nouveauMotDePasse) {
+        Utilisateur utilisateur = getUtilisateurConnecte();
+
+        if (!passwordEncoder.matches(ancienMotDePasse, utilisateur.getPassword())) {
+            throw new IllegalArgumentException("L'ancien mot de passe est incorrect.");
+        }
+
+        utilisateur.setPassword(passwordEncoder.encode(nouveauMotDePasse));
+        utilisateur.setForcePasswordChange(false); // Il ne sera plus obligé de changer le mot de passe au login
+        utilisateurRepository.save(utilisateur);
+    }
+
+    public void supprimerUtilisateur(Long id) {
+        Utilisateur utilisateur = utilisateurRepository.findById(id)
+                .orElseThrow(() -> new UtilisateurNotFoundException(id));
+        utilisateurRepository.delete(utilisateur);
+    }
+
+    public List<UtilisateurDto> rechercherParUsernameOuEmail(String recherche) {
+        List<Utilisateur> utilisateurs = utilisateurRepository
+                .findByUsernameContainingIgnoreCaseOrEmailContainingIgnoreCase(recherche, recherche);
+
+        if (utilisateurs.isEmpty()) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Aucun utilisateur trouvé pour : " + recherche);
+        }
+
+        return utilisateurMapper.toDtoList(utilisateurs);
+    }
+
+
+
 }

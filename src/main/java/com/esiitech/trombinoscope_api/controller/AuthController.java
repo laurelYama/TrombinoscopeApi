@@ -3,7 +3,12 @@ package com.esiitech.trombinoscope_api.controller;
 import com.esiitech.trombinoscope_api.DTOs.AuthRequest;
 import com.esiitech.trombinoscope_api.DTOs.AuthResponse;
 import com.esiitech.trombinoscope_api.DTOs.ChangerMotDePasseRequest;
+import com.esiitech.trombinoscope_api.DTOs.SetPasswordRequest;
+import com.esiitech.trombinoscope_api.Entity.PasswordResetToken;
+import com.esiitech.trombinoscope_api.Entity.Utilisateur;
 import com.esiitech.trombinoscope_api.Exception.ApiException;
+import com.esiitech.trombinoscope_api.repository.PasswordResetTokenRepository;
+import com.esiitech.trombinoscope_api.repository.UtilisateurRepository;
 import com.esiitech.trombinoscope_api.service.AuthService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -18,7 +23,10 @@ import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
+
+import java.time.LocalDateTime;
 
 @RestController
 @RequestMapping("/api/auth")
@@ -28,6 +36,10 @@ public class AuthController {
 
     private final AuthService authService;
     private static final Logger logger = LoggerFactory.getLogger(AuthController.class);
+    private final PasswordResetTokenRepository passwordResetTokenRepository;
+    private final UtilisateurRepository utilisateurRepository;
+    private final PasswordEncoder passwordEncoder;
+
 
     @PreAuthorize("hasRole('ADMIN')")
     @PostMapping("/register")
@@ -55,25 +67,38 @@ public class AuthController {
         return ResponseEntity.ok(response);
     }
 
-    @PutMapping("/change-password")
-    @Operation(summary = "Changer le mot de passe", description = "Permet à un utilisateur de changer son mot de passe obligatoire à la première connexion.")
+    @PostMapping("/set-password")
+    @Operation(summary = "Définir un mot de passe via un lien sécurisé", description = "Permet de définir un mot de passe à partir d’un lien reçu par email.")
     @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "Mot de passe changé avec succès"),
-            @ApiResponse(responseCode = "400", description = "Données invalides"),
-            @ApiResponse(responseCode = "404", description = "Utilisateur non trouvé")
+            @ApiResponse(responseCode = "200", description = "Mot de passe défini avec succès"),
+            @ApiResponse(responseCode = "400", description = "Token invalide ou expiré")
     })
-    public ResponseEntity<String> changePassword(@RequestBody @Valid ChangerMotDePasseRequest request) {
-        logger.info("Requête reçue pour changement de mot de passe de l'email: {}", request.getEmail());
-
-        try {
-            return authService.changePassword(request);  //Utilisation du retour de service
-        } catch (ApiException e) {
-            logger.warn("Erreur lors du changement de mot de passe: {}", e.getMessage());
-            return ResponseEntity.status(e.getStatus()).body(e.getMessage());
-        } catch (Exception e) {
-            logger.error("Erreur interne lors du changement de mot de passe", e);
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Une erreur interne est survenue.");
+    public ResponseEntity<String> setPassword(@Valid @RequestBody SetPasswordRequest request) {
+        // Vérifier si le mot de passe et la confirmation correspondent
+        if (!request.getNouveauMotDePasse().equals(request.getConfirmationMotDePasse())) {
+            throw new ApiException("Le mot de passe et sa confirmation ne correspondent pas", HttpStatus.BAD_REQUEST);
         }
+
+        // Vérifier si le token est valide
+        PasswordResetToken resetToken = passwordResetTokenRepository.findByToken(request.getToken())
+                .orElseThrow(() -> new ApiException("Token invalide ou expiré", HttpStatus.BAD_REQUEST));
+
+        if (resetToken.getExpirationDate().isBefore(LocalDateTime.now())) {
+            throw new ApiException("Le lien a expiré", HttpStatus.BAD_REQUEST);
+        }
+
+        Utilisateur utilisateur = resetToken.getUtilisateur();
+
+        utilisateur.setPassword(passwordEncoder.encode(request.getNouveauMotDePasse()));
+        utilisateur.setForcePasswordChange(false);
+        utilisateur.setUpdatedAt(LocalDateTime.now());
+        utilisateurRepository.save(utilisateur);
+
+        // Supprimer le token de réinitialisation après usage
+        passwordResetTokenRepository.delete(resetToken);
+
+        return ResponseEntity.ok("Mot de passe défini avec succès");
     }
+
 
 }
