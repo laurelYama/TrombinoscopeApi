@@ -29,35 +29,54 @@ public class SecurityConfig {
     private final UtilisateurRepository utilisateurRepository; //Injection du repository
 
     @Bean
-    public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
-        http
-            .cors(Customizer.withDefaults())
-            .csrf(csrf -> csrf.disable())
-            .authorizeHttpRequests(auth -> auth
-                .requestMatchers("/api/auth/login").permitAll()
-                .requestMatchers("/api/auth/set-password").permitAll()
-                .requestMatchers("/api/auth/change-password").permitAll()
-                .requestMatchers("/api/utilisateurs/mot-de-passe-oublie", "/api/utilisateurs/reinitialiser-mot-de-passe").permitAll()
-                .requestMatchers("/api/auth/register").hasRole("ADMIN")
-                .requestMatchers("/api/utilisateurs/**").hasRole("ADMIN")
-                .requestMatchers("/api/promotions/**").hasRole("ADMIN")
-                .requestMatchers("/api/specialites/**").hasRole("ADMIN")
-                .requestMatchers("/api/parcours/**").hasRole("ADMIN")
-                .requestMatchers("/api/diplomes/**").hasRole("ADMIN")
-                .requestMatchers("/api/etudiants/**").hasAnyRole("ADMIN", "NORMAL")
-                .requestMatchers("/api/photos/**").hasAnyRole("ADMIN", "NORMAL")
-                .requestMatchers(
-                    "/swagger-ui/**",
-                    "/v3/api-docs/**"
-                ).permitAll()
-                .anyRequest().authenticated()
-            )
-            .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-            .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
-            .addFilterBefore(new PasswordChangeFilter(utilisateurRepository), UsernamePasswordAuthenticationFilter.class);
-    
-        return http.build();
-    }
+public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
+    http
+        .cors(Customizer.withDefaults())
+        .csrf(csrf -> csrf.disable())
+        .authorizeHttpRequests(auth -> auth
+            // Auth & Password
+            .requestMatchers("/api/auth/login").permitAll()
+            .requestMatchers("/api/auth/change-password").permitAll()
+            .requestMatchers("/api/utilisateurs/mot-de-passe-oublie", "/api/utilisateurs/reinitialiser-mot-de-passe").permitAll()
+
+            // Swagger
+            .requestMatchers("/swagger-ui/**", "/v3/api-docs/**").permitAll()
+
+            // Public GET for trombinoscope
+            .requestMatchers(HttpMethod.GET, "/api/etudiants/**").permitAll()
+            .requestMatchers(HttpMethod.GET, "/api/photos/**").permitAll()
+            .requestMatchers(HttpMethod.GET, "/api/promotions/**").permitAll()
+            .requestMatchers(HttpMethod.GET, "/api/specialites/**").permitAll()
+            .requestMatchers(HttpMethod.GET, "/api/parcours/**").permitAll()
+            .requestMatchers(HttpMethod.GET, "/api/etudiant-promo/**").permitAll()
+
+            // ADMIN protected routes
+            .requestMatchers("/api/auth/register").hasRole("ADMIN")
+            .requestMatchers("/api/utilisateurs/**").hasRole("ADMIN")
+            .requestMatchers(HttpMethod.POST, "/api/promotions/**").hasRole("ADMIN")
+            .requestMatchers(HttpMethod.PUT, "/api/promotions/**").hasRole("ADMIN")
+            .requestMatchers(HttpMethod.POST, "/api/specialites/**").hasRole("ADMIN")
+            .requestMatchers(HttpMethod.PUT, "/api/specialites/**").hasRole("ADMIN")
+            .requestMatchers(HttpMethod.POST, "/api/parcours/**").hasRole("ADMIN")
+            .requestMatchers(HttpMethod.PUT, "/api/parcours/**").hasRole("ADMIN")
+
+            // ADMIN or NORMAL for managing (non-public)
+            .requestMatchers(HttpMethod.POST, "/api/etudiants/**").hasAnyRole("ADMIN", "NORMAL")
+            .requestMatchers(HttpMethod.PUT, "/api/etudiants/**").hasAnyRole("ADMIN", "NORMAL")
+            .requestMatchers(HttpMethod.POST, "/api/photos/**").hasAnyRole("ADMIN", "NORMAL")
+            .requestMatchers(HttpMethod.POST, "/api/etudiant-promo/**").hasAnyRole("ADMIN", "NORMAL")
+            .requestMatchers(HttpMethod.PUT, "/api/etudiant-promo/**").hasAnyRole("ADMIN", "NORMAL")
+
+            // All other requests need authentication
+            .anyRequest().authenticated()
+        )
+        .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+        .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
+        .addFilterBefore(new PasswordChangeFilter(utilisateurRepository), UsernamePasswordAuthenticationFilter.class);
+
+    return http.build();
+}
+
 
     @Bean
     public AuthenticationManager authenticationManager(AuthenticationConfiguration authConfig) throws Exception {
