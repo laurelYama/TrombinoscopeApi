@@ -31,31 +31,31 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
-                .cors(Customizer.withDefaults())
-                // Activation des CORS
-                .csrf(csrf -> csrf.disable())
-                .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/api/auth/login").permitAll() // Connexion accessible à tous
-                        .requestMatchers("/api/auth/change-password").permitAll()
-                        .requestMatchers("/api/utilisateurs/mot-de-passe-oublie", "/api/utilisateurs/reinitialiser-mot-de-passe").permitAll() // Permet l'accès sans authentification
-                        .requestMatchers("/api/auth/register").hasRole("ADMIN") // Seul un ADMIN peut inscrire un utilisateur
-                        .requestMatchers("/api/utilisateurs/**").hasRole("ADMIN") // Protection des routes utilisateurs
-                        .requestMatchers("/api/promotions/**").hasRole("ADMIN")
-                        .requestMatchers("/api/specialites/**").hasRole("ADMIN")
-                        .requestMatchers("/api/parcours/**").hasRole("ADMIN")
-                        .requestMatchers("/api/diplomes/**").hasRole("ADMIN")
-                        .requestMatchers("/api/etudiants/**").hasAnyRole("ADMIN", "NORMAL")
-                        .requestMatchers("/api/photos/**").hasAnyRole("ADMIN", "NORMAL")
-                        .requestMatchers(
-                                "/swagger-ui/**",
-                                "/v3/api-docs/**"
-                        ).permitAll() // Autoriser l'accès à Swagger
-                        .anyRequest().authenticated()
-                )
-                .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-                .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
-                .addFilterBefore(new PasswordChangeFilter(utilisateurRepository), UsernamePasswordAuthenticationFilter.class); // ✅ Suppression du ; avant cette ligne
-
+            .cors(Customizer.withDefaults())
+            .csrf(csrf -> csrf.disable())
+            .authorizeHttpRequests(auth -> auth
+                .requestMatchers("/api/auth/login").permitAll()
+                .requestMatchers("/api/auth/set-password").permitAll()
+                .requestMatchers("/api/auth/change-password").permitAll()
+                .requestMatchers("/api/utilisateurs/mot-de-passe-oublie", "/api/utilisateurs/reinitialiser-mot-de-passe").permitAll()
+                .requestMatchers("/api/auth/register").hasRole("ADMIN")
+                .requestMatchers("/api/utilisateurs/**").hasRole("ADMIN")
+                .requestMatchers("/api/promotions/**").hasRole("ADMIN")
+                .requestMatchers("/api/specialites/**").hasRole("ADMIN")
+                .requestMatchers("/api/parcours/**").hasRole("ADMIN")
+                .requestMatchers("/api/diplomes/**").hasRole("ADMIN")
+                .requestMatchers("/api/etudiants/**").hasAnyRole("ADMIN", "NORMAL")
+                .requestMatchers("/api/photos/**").hasAnyRole("ADMIN", "NORMAL")
+                .requestMatchers(
+                    "/swagger-ui/**",
+                    "/v3/api-docs/**"
+                ).permitAll()
+                .anyRequest().authenticated()
+            )
+            .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+            .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
+            .addFilterBefore(new PasswordChangeFilter(utilisateurRepository), UsernamePasswordAuthenticationFilter.class);
+    
         return http.build();
     }
 
