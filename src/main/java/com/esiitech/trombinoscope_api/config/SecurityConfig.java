@@ -43,8 +43,9 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.GET, "/api/photos/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/promotions/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/specialites/**").permitAll()
-                        .requestMatchers(HttpMethod.GET, "/api/parcours/**").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/cycles/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/etudiant-promo/**").permitAll()
+                        .requestMatchers("/api/diplomes/{numero}").permitAll()
 
                         // ADMIN protected routes
                         .requestMatchers("/api/auth/register").hasRole("ADMIN")
@@ -53,8 +54,9 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.PUT, "/api/promotions/**").hasRole("ADMIN")
                         .requestMatchers(HttpMethod.POST, "/api/specialites/**").hasRole("ADMIN")
                         .requestMatchers(HttpMethod.PUT, "/api/specialites/**").hasRole("ADMIN")
-                        .requestMatchers(HttpMethod.POST, "/api/parcours/**").hasRole("ADMIN")
-                        .requestMatchers(HttpMethod.PUT, "/api/parcours/**").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.POST, "/api/cycles/**").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.PUT, "/api/cycles/**").hasRole("ADMIN")
+                        .requestMatchers("/api/diplomes/**").hasRole("ADMIN")
 
                         // ADMIN or NORMAL for managing (non-public)
                         .requestMatchers(HttpMethod.POST, "/api/etudiants/**").hasAnyRole("ADMIN", "NORMAL")

@@ -43,8 +43,12 @@ public class AuthService {
             throw new ApiException("Cet email est déjà utilisé.", HttpStatus.BAD_REQUEST);
         }
 
+        if (utilisateurRepository.findByUsername(request.getUsername()).isPresent()) {
+            throw new ApiException("Ce nom d'utilisateur est déjà utilisé.", HttpStatus.BAD_REQUEST);
+        }
+
         Utilisateur newUser = Utilisateur.builder()
-                .username(request.getEmail().split("@")[0])
+                .username(request.getUsername())
                 .email(request.getEmail())
                 .password("")
                 .role(request.getRole() != null ? request.getRole() : Role.NORMAL)

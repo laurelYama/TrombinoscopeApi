@@ -194,12 +194,9 @@ public class UtilisateurService {
         List<Utilisateur> utilisateurs = utilisateurRepository
                 .findByUsernameContainingIgnoreCaseOrEmailContainingIgnoreCase(recherche, recherche);
 
-        if (utilisateurs.isEmpty()) {
-            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Aucun utilisateur trouvé pour : " + recherche);
-        }
-
         return utilisateurMapper.toDtoList(utilisateurs);
     }
+
 
 
 

@@ -9,6 +9,7 @@ public interface UtilisateurRepository extends JpaRepository<Utilisateur, Long> 
     Optional<Utilisateur> findByEmail(String email);
     Optional<Utilisateur> findByResetToken(String resetToken);
     List<Utilisateur> findByActifTrue();
+    Optional<Utilisateur> findByUsername(String username);
 
     List<Utilisateur> findByUsernameContainingIgnoreCaseOrEmailContainingIgnoreCase(String username, String email);
 

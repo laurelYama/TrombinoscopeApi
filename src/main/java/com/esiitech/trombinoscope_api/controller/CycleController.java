@@ -28,7 +28,6 @@ public class CycleController {
             @ApiResponse(responseCode = "403", description = "Accès refusé")
     })
     @GetMapping
-    @PreAuthorize("hasRole('ADMIN')")
     public List<Cycle> getAllParcours() {
         return cycleService.getAllCycle();
     }
@@ -39,7 +38,6 @@ public class CycleController {
             @ApiResponse(responseCode = "404", description = "Cycle non trouvé")
     })
     @GetMapping("/{id}")
-    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<Cycle> getParcoursById(@PathVariable Long id) {
         return ResponseEntity.ok(cycleService.getCycleById(id));
     }

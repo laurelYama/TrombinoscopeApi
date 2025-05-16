@@ -92,29 +92,51 @@ public class PhotoController {
         }
     }
 
-    @Operation(summary = "Mettre à jour une photo", description = "Remplace une photo existante par une nouvelle.")
+    @Operation(
+            summary = "Mettre à jour une photo existante",
+            description = "Écrase une photo existante sur le serveur avec une nouvelle image en conservant le même nom de fichier. Le fichier doit être au format JPEG ou PNG et ne pas dépasser 5 Mo."
+    )
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "Photo mise à jour avec succès"),
-            @ApiResponse(responseCode = "404", description = "Fichier non trouvé"),
-            @ApiResponse(responseCode = "500", description = "Erreur lors de la mise à jour")
+            @ApiResponse(responseCode = "400", description = "Fichier non valide ou trop volumineux"),
+            @ApiResponse(responseCode = "404", description = "Fichier original non trouvé"),
+            @ApiResponse(responseCode = "500", description = "Erreur lors de la mise à jour de la photo")
     })
     @PutMapping("/update/{filename}")
     @PreAuthorize("hasRole('ADMIN') or hasRole('NORMAL')")
     public ResponseEntity<String> updatePhoto(@PathVariable String filename, @RequestParam("file") MultipartFile newFile) {
-        Path oldFilePath = Paths.get(UPLOAD_DIR, filename);
+        Path filePath = Paths.get(UPLOAD_DIR, filename);
 
-        if (!Files.exists(oldFilePath)) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Fichier non trouvé.");
+        if (!Files.exists(filePath)) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Fichier original non trouvé.");
+        }
+
+        // Vérifier si le fichier est vide
+        if (newFile.isEmpty()) {
+            return ResponseEntity.badRequest().body("Le fichier est vide.");
+        }
+
+        // Vérifier le format
+        if (!ALLOWED_EXTENSIONS.contains(newFile.getContentType())) {
+            return ResponseEntity.badRequest().body("Format non autorisé. Seuls JPEG et PNG sont acceptés.");
+        }
+
+        // Vérifier la taille
+        if (newFile.getSize() > MAX_FILE_SIZE) {
+            return ResponseEntity.badRequest().body("Le fichier dépasse la taille maximale de 5 Mo.");
         }
 
         try {
-            Files.deleteIfExists(oldFilePath);
-            return uploadPhoto(newFile);
+            // Écraser le fichier existant avec le nouveau contenu
+            Files.copy(newFile.getInputStream(), filePath, StandardCopyOption.REPLACE_EXISTING);
+            return ResponseEntity.ok("Photo mise à jour avec succès : " + filename);
         } catch (IOException e) {
             logger.error("Erreur lors de la mise à jour de l'image", e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Erreur lors de la mise à jour.");
         }
     }
+
+
 
     @Operation(summary = "Récupérer une photo", description = "Récupère une photo du serveur par son nom de fichier.")
     @ApiResponses({

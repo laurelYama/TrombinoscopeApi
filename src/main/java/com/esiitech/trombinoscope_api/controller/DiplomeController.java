@@ -46,7 +46,6 @@ public class DiplomeController {
             @ApiResponse(responseCode = "404", description = "Diplôme non trouvé")
     })
     @GetMapping("/{numero}")
-    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<?> getDiplomeByNumero(@PathVariable String numero) {
         try {
             return ResponseEntity.ok(diplomeService.getDiplomeByNumero(numero));

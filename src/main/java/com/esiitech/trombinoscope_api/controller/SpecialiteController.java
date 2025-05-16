@@ -23,14 +23,12 @@ public class SpecialiteController {
         this.specialiteService = specialiteService;
     }
 
-    @PreAuthorize("hasRole('ADMIN')")
     @GetMapping
     @Operation(summary = "Récupérer toutes les spécialités", description = "Renvoie la liste de toutes les spécialités disponibles.")
     public List<Specialite> getAllSpecialites() {
         return specialiteService.getAllSpecialites();
     }
 
-    @PreAuthorize("hasRole('ADMIN')")
     @GetMapping("/{id}")
     @Operation(summary = "Récupérer une spécialité par ID", description = "Renvoie une spécialité spécifique en fonction de son identifiant.")
     public ResponseEntity<Specialite> getSpecialiteById(@PathVariable Long id) {

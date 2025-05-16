@@ -8,6 +8,7 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -23,6 +24,7 @@ public class EtudiantPromoController {
 
     @Operation(summary = "Ajouter une promotion à un étudiant", description = "Permet d'associer un étudiant à une promotion, un cycle et une spécialité.")
     @PostMapping("/ajouter")
+    @PreAuthorize("hasRole('ADMIN') or hasRole('NORMAL')")
     public ResponseEntity<EtudiantPromo> ajouterEtudiantPromo(@RequestBody EtudiantPromo etudiantPromo) {
         return ResponseEntity.ok(etudiantPromoService.ajouterEtudiantPromo(etudiantPromo));
     }
@@ -51,6 +53,7 @@ public class EtudiantPromoController {
             @ApiResponse(responseCode = "404", description = "Etudiant non trouvé")
     })
     @PutMapping("/{id}")
+    @PreAuthorize("hasRole('ADMIN') or hasRole('NORMAL')")
     public ResponseEntity<EtudiantPromo> modifierEtudiantPromo(@PathVariable Long id, @RequestBody EtudiantPromo updatedPromo) {
         try {
             EtudiantPromo etudiantPromoModifie = etudiantPromoService.modifierEtudiantPromo(id, updatedPromo);

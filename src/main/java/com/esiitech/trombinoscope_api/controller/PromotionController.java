@@ -27,7 +27,6 @@ public class PromotionController {
 
     @Operation(summary = "Récupérer toutes les promotions",
             description = "Permet d'obtenir la liste de toutes les promotions.")
-    @PreAuthorize("hasRole('ADMIN')")
     @GetMapping
     public List<Promotion> getAllPromotions() {
         return promotionService.getAllPromotions();
@@ -41,7 +40,6 @@ public class PromotionController {
                                     schema = @Schema(implementation = Promotion.class))),
                     @ApiResponse(responseCode = "404", description = "Promotion non trouvée")
             })
-    @PreAuthorize("hasRole('ADMIN')")
     @GetMapping("/{id}")
     public ResponseEntity<Promotion> getPromotionById(@PathVariable Long id) {
         try {
