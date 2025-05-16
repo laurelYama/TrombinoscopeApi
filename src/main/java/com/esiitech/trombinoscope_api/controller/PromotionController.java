@@ -15,7 +15,6 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/promotions")
-@CrossOrigin("*") // Autoriser les requêtes depuis le frontend
 @Tag(name = "Promotions", description = "API pour gérer les promotions")
 public class PromotionController {
 

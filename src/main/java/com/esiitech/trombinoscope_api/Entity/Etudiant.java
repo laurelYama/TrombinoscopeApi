@@ -41,7 +41,6 @@ public class Etudiant {
     @NotBlank(message = "La nationalité est obligatoire")
     private String nationalite;
 
-    private String photo;
     private String photoPath;
 
     private boolean actif = true;

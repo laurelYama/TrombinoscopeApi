@@ -13,7 +13,6 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/specialites")
-@CrossOrigin("*") // Autorise l'accès depuis le frontend
 @Tag(name = "Spécialités", description = "Gestion des spécialités")
 public class SpecialiteController {
 

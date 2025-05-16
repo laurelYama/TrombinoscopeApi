@@ -15,7 +15,6 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/cycles")
-@CrossOrigin("*")
 @Tag(name = "Cycles", description = "Gestion des cycles étudiants")
 public class CycleController {
 
