@@ -32,7 +32,7 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         // Auth & Password
                         .requestMatchers("/api/auth/login").permitAll()
-                        .requestMatchers("/api/auth/change-password").permitAll()
+                        .requestMatchers("/api/auth/set-password").permitAll()
                         .requestMatchers("/api/utilisateurs/mot-de-passe-oublie", "/api/utilisateurs/reinitialiser-mot-de-passe").permitAll()
 
                         // Swagger

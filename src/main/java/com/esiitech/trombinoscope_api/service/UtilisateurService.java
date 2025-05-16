@@ -141,7 +141,7 @@ public class UtilisateurService {
         utilisateur.setPassword(passwordEncoder.encode(nouveauMotDePasse));
         utilisateur.setResetToken(null);
         utilisateur.setResetTokenTimestamp(null);
-        utilisateur.setForcePasswordChange(true);
+        utilisateur.setForcePasswordChange(false);
         utilisateurRepository.save(utilisateur);
     }
 
